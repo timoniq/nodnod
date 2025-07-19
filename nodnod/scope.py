@@ -4,12 +4,15 @@ from nodnod.utils.aio import awaitable_noop
 import typing
 import fntypes
 import asyncio
+import secrets
 from collections import OrderedDict
 
 
 class Scope(OrderedDict[type[Node[typing.Any]], Node[typing.Any]]):
-    def __init__(self, prev: "Scope | None" = None):
+    def __init__(self, prev: "Scope | None" = None, detail: str | None = None):
         self.prev = prev
+        self.detail = detail or secrets.token_hex(5)
+        self.is_closed = False
     
     def retrieve[T](self, key: type[Node[T]]) -> fntypes.Option[Node[T]]:
         if key not in self:
@@ -19,9 +22,13 @@ class Scope(OrderedDict[type[Node[typing.Any]], Node[typing.Any]]):
         return fntypes.Some(self[key])
     
     def __repr__(self) -> str:
-        return ", ".join(f"{node_t.__name__}: {node.value}" for node_t, node in self.items())
+        return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {node.value}" for node_t, node in self.items()) if self else "(empty)")
     
     def close(self) -> typing.Awaitable[typing.Any]:
+        if self.is_closed:
+            raise RuntimeError("Scope has already been closed")
+        
+        self.is_closed = True
         coros = []
 
         while self:
@@ -34,4 +41,28 @@ class Scope(OrderedDict[type[Node[typing.Any]], Node[typing.Any]]):
             return awaitable_noop()
         
         return asyncio.gather(*coros)
+    
+    def has_parent(self, parent: "Scope"):
+        candidate = self.prev
+        while candidate is not None:
+            if candidate is parent:
+                return True
+            candidate = candidate.prev
+        return False
+    
+    def create_child(self, detail: str | None = None) -> "Scope":
+        return Scope(prev=self, detail=detail)
+    
+    def __enter__(self):
+        return self
 
+    def __exit__(self, exc_type, exc, tb):
+        if not self.is_closed:
+            self.close()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        if not self.is_closed:
+            await self.close()

@@ -52,11 +52,21 @@ async def compose_node[T](
     return scope[node].__box__()
 
 
+def validate_local_scope_is_linked_to_node_scopes(local_scope: Scope, node_scopes: dict[type[Node], Scope]):
+    if __debug__:
+        for node, node_scope in node_scopes.items():
+            if not local_scope.has_parent(node_scope):
+                raise NodeError(f"`{node.__name__}`'s scope ({node_scope.detail}) is not a parent of local scope ({local_scope.detail})")
+
+
 async def compose_from_steps(
     steps: list[Step],
-    node_scopes: dict[type[Node], Scope],
-) -> Scope:
+    *,
+    local_scope: Scope,
+    node_scopes: dict[type[Node], Scope] | None = None,
+):
+    node_scopes = node_scopes or {}
+    validate_local_scope_is_linked_to_node_scopes(local_scope, node_scopes)
+
     agent = AsyncAgent(steps)
-    local_scope = Scope()  # FIXME
     await agent.run(local_scope, node_scopes)
-    return local_scope

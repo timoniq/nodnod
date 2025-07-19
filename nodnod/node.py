@@ -60,11 +60,14 @@ class Node[T]:
             return awaitable_noop()
         
         if isinstance(self.generator, types.AsyncGeneratorType):
-            return generator_asend(self.generator)
+            result = generator_asend(self.generator)
+            self.generator = None
+            return result
         
         elif isinstance(self.generator, types.GeneratorType):
             generator_send(self.generator)
         
+        self.generator = None
         return awaitable_noop()
 
 
