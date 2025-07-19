@@ -4,7 +4,7 @@ from nodnod.box import Box
 from nodnod.error import NodeError
 from nodnod.builder.steps import Step
 from nodnod.agent.aio import AsyncAgent
-from nodnod.utils import generator_send, generator_asend
+from nodnod.utils.generator import generator_send, generator_asend
 import inspect
 import typing
 import types
@@ -34,16 +34,18 @@ async def compose_node[T](
     """Composes node into a boxed value.
     If node is already composed in scope, then returns box value from scope"""
 
-    if box := scope.retrieve(node):
-        return box.unwrap()
+    if n := scope.retrieve(node):
+        return n.unwrap().__box__()
     
-    dependencies = []
+    dependencies = set[Node]()
     for dependency in node.__dependencies__:
-        dependencies.append(
-            scope.retrieve(dependency).expect(NodeError("Dependency was not resolved"))
+        dependencies.add(
+            scope
+            .retrieve(dependency)
+            .expect(NodeError("Dependency was not resolved"))
         )
     
-    value = node.__compose__(*dependencies)
+    value = node.__bound_compose__(dependencies)
     
     scope[node] = await create_node(node, value)
 

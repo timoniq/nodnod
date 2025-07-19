@@ -3,7 +3,7 @@ import asyncio
 
 class A(Node[int]):
     @classmethod
-    def __compose__(cls):
+    async def __compose__(cls):
         yield 11
         print("closing A")
 
@@ -16,11 +16,10 @@ class B(Node[int]):
 
 
 class C(Node[int]):
-    __dependencies__ = {A, B}
-    
     @classmethod
-    def __compose__(cls, a: A, b: B) -> int:
-        return a.value + b.value
+    def __compose__(cls, a: A, b: B):
+        yield a.value + b.value
+        print("close c")
 
 
 async def main():
@@ -31,6 +30,9 @@ async def main():
     print(scope)
 
     await scope.close()
+
+    # Firstly closes C
+    # then A and B (any order because they are from the same layer of parallels)
 
 
 asyncio.run(main())

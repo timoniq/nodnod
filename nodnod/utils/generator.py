@@ -16,8 +16,3 @@ def generator_send[T, Send](generator: typing.Generator[T, Send, None], send: Se
         value = generator.send(send)
         return fntypes.Some(value)
     return fntypes.Nothing()
-
-
-class awaitable_noop:
-    def __await__(self) -> typing.Generator[None, None, typing.Any]:
-        return iter(())  # type: ignore
