@@ -14,7 +14,7 @@ def build_parallels(nodes: Queue) -> list[Queue]:
         build_queue(node, all_nodes)
 
     for node in all_nodes:
-        dependencies = node.__dependencies__()
+        dependencies = node.__dependencies__
         for dependency in dependencies:
             initiators[dependency].add(node)
         initiation[node] = len(dependencies)

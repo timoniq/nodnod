@@ -12,11 +12,13 @@ class AsyncAgent(Agent):
 
         for step in self.steps:
             match step:
+                
                 case Parallel(nodes=nodes):
                     coros = [
                         compose_node(node, node_scopes.get(node, local_scope))
                         for node in nodes
                     ]
                     await asyncio.gather(*coros)
+                
                 case ComposeOne(node=node):
                     await compose_node(node, node_scopes.get(node, local_scope))
