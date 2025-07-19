@@ -1,0 +1,2 @@
+class NodeError(Exception):
+    pass
