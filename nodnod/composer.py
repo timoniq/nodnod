@@ -10,7 +10,9 @@ async def compose_node[T](
     node: type[Node[T]],
     scope: Scope,
 ) -> Box[T]:
-    
+    """Composes node into a boxed value.
+    If node is already composed in scope, then returns box value from scope"""
+
     if box := scope.retrieve(node):
         return box.unwrap()
     
