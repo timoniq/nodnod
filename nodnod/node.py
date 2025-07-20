@@ -15,6 +15,7 @@ type ComposeResponse[T] = T | typing.Awaitable[T] | Generator[T]
 class Node[T]:
     __dependencies__: set[type["Node"]] = None # type: ignore
     __bound_compose__: typing.Callable[[set["Node"]], ComposeResponse[T]] = None # type: ignore
+    __traverse__: set[type["Node"]] = __dependencies__
 
     def __init__(self, value: T, generator: Generator[T] | None = None):
         self.value = value
@@ -71,4 +72,4 @@ class Node[T]:
         return awaitable_noop()
 
 
-type Queue = set[type[Node]]
+type Queue = list[type[Node]]

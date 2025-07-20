@@ -1,6 +1,6 @@
 import typing
 import asyncio
-from nodnod.composer import compose_node
+from nodnod.compose import compose_node
 from nodnod.node import Node
 from nodnod.scope import Scope
 import fntypes
@@ -30,7 +30,7 @@ async def dependency_either_coroutine(
     return fntypes.Error(NodeError("No node found"))
 
 
-async def dependency_parallel_either_corountine(
+async def dependency_concurrent_either_corountine(
     dependencies: list[DependencyFuture],
 ) -> fntypes.Result[Box[typing.Any], NodeError]:
     done, pending = await asyncio.wait(

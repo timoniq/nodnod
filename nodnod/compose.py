@@ -9,7 +9,7 @@ import types
 import fntypes
 
 
-async def create_node[T](node_cls: type[Node], value: ComposeResponse[T]) -> Node[T]:
+async def initialize_node[T](node_cls: type[Node], value: ComposeResponse[T]) -> Node[T]:
     if inspect.isawaitable(value):
         value = typing.cast(T, await value)
     
@@ -46,7 +46,7 @@ async def compose_node[T](
     
     try:
         value = node.__bound_compose__(dependencies)
-        scope[node] = await create_node(node, value)
+        scope[node] = await initialize_node(node, value)
     
     except NodeError as e:
         return fntypes.Error(e)

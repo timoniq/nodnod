@@ -1,4 +1,5 @@
-from nodnod import Node, LayerAgent, Scope
+from nodnod import Node, EventLoopAgent, Scope
+from nodnod.interface.either import ConcurrentEither
 import asyncio
 
 class A(Node[int]):
@@ -17,16 +18,21 @@ class B(Node[int]):
         print("closing b")
 
 
+class AorB(ConcurrentEither):
+    __either__ = (A, B)
+
+
 class C(Node[int]):
     @classmethod
-    def __compose__(cls, a: A, b: B):
+    def __compose__(cls, aorb: AorB):
+        print(aorb)
         print("calculating c")
-        yield a.value + b.value
+        yield aorb.value.v.value
         print("close c")
 
 
 async def main():
-    agent = LayerAgent.build({C})
+    agent = EventLoopAgent.build({C})
 
     global_scope = Scope(detail="global")
 

@@ -12,7 +12,7 @@ import asyncio
 import fntypes
 
 
-def build_steps(nodes: Queue) -> list[Step]:
+def build_steps(nodes: set[type[Node]]) -> list[Step]:
     """Builds list of nodes to an optimized set of steps required for their computation"""
 
     parallels = build_parallels(nodes)
@@ -42,7 +42,7 @@ class LayerAgent(Agent):
         local_scope: Scope, 
         mapped_scopes: dict[type[Node], Scope],
     ):
-        from nodnod.composer import compose_node
+        from nodnod.compose import compose_node
 
         validate_local_scope_is_linked_to_node_scopes(local_scope, mapped_scopes)
         initiations = dict[type[Node], fntypes.Result[Box[type[Node]], NodeError]]()
