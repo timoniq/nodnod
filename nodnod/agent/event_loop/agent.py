@@ -24,6 +24,9 @@ class EventLoopAgent(Agent):
         
         for node in self.traversed_nodes:
 
+            if node in futures:
+                continue
+
             if issubclass(node, Either):
 
                 if node.concurrent:
@@ -96,4 +99,3 @@ class EventLoopAgent(Agent):
             futures,
         )
         await asyncio.gather(*futures.values())
-        
