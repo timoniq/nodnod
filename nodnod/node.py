@@ -15,13 +15,15 @@ type ComposeResponse[T] = T | typing.Awaitable[T] | Generator[T]
 class Node[T]:
     __dependencies__: set[type["Node"]] = None # type: ignore
     __bound_compose__: typing.Callable[[set["Node"]], ComposeResponse[T]] = None # type: ignore
-    __traverse__: set[type["Node"]] = __dependencies__
+    __traverse__: list[type["Node"]] = None # type: ignore
 
     def __init__(self, value: T, generator: Generator[T] | None = None):
         self.value = value
         self.generator = generator
 
     def __init_subclass__(cls, abstract: bool = False) -> None:
+        from nodnod.builder.build_queue import build_queue
+        
         if not abstract:
             # Resolve dependecies via __compose__ signature
             signature = resolve_signature(cls.__compose__, ignore_bound_parameters=True)
@@ -45,6 +47,8 @@ class Node[T]:
                         lambda params: cls.__compose__(*params[0], **params[1])
                     )
                 )
+            
+            cls.__traverse__ = build_queue(cls, [])
     
     @classmethod
     def __compose__(cls, *args, **kwargs) -> ComposeResponse[T]:
