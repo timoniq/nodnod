@@ -4,7 +4,7 @@ from nodnod.node import Queue, Node
 
 
 def build_parallels(nodes: Queue) -> list[Queue]:
-    """Computes layers of nodes that can be composed in parallel"""
+    """Computes isolated layers of nodes that can be composed in parallel"""
     
     initiators = collections.defaultdict[type[Node], Queue](set)
     initiation = dict[type[Node], int]()

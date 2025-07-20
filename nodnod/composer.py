@@ -2,12 +2,11 @@ from nodnod.node import Node, ComposeResponse
 from nodnod.scope import Scope
 from nodnod.box import Box
 from nodnod.error import NodeError
-from nodnod.builder.steps import Step
-from nodnod.agent.aio import AsyncAgent
 from nodnod.utils.generator import generator_send, generator_asend
 import inspect
 import typing
 import types
+import fntypes
 
 
 async def create_node[T](node_cls: type[Node], value: ComposeResponse[T]) -> Node[T]:
@@ -30,12 +29,12 @@ async def create_node[T](node_cls: type[Node], value: ComposeResponse[T]) -> Nod
 async def compose_node[T](
     node: type[Node[T]],
     scope: Scope,
-) -> Box[T]:
+) -> fntypes.Result[Box[T], NodeError]:
     """Composes node into a boxed value.
     If node is already composed in scope, then returns box value from scope"""
 
     if n := scope.retrieve(node):
-        return n.unwrap().__box__()
+        return fntypes.Ok(n.unwrap().__box__())
     
     dependencies = set[Node]()
     for dependency in node.__dependencies__:
@@ -45,28 +44,11 @@ async def compose_node[T](
             .expect(NodeError("Dependency was not resolved"))
         )
     
-    value = node.__bound_compose__(dependencies)
+    try:
+        value = node.__bound_compose__(dependencies)
+        scope[node] = await create_node(node, value)
     
-    scope[node] = await create_node(node, value)
+    except NodeError as e:
+        return fntypes.Error(e)
 
-    return scope[node].__box__()
-
-
-def validate_local_scope_is_linked_to_node_scopes(local_scope: Scope, node_scopes: dict[type[Node], Scope]):
-    if __debug__:
-        for node, node_scope in node_scopes.items():
-            if not local_scope.has_parent(node_scope):
-                raise NodeError(f"`{node.__name__}`'s scope ({node_scope.detail}) is not a parent of local scope ({local_scope.detail})")
-
-
-async def compose_from_steps(
-    steps: list[Step],
-    *,
-    local_scope: Scope,
-    node_scopes: dict[type[Node], Scope] | None = None,
-):
-    node_scopes = node_scopes or {}
-    validate_local_scope_is_linked_to_node_scopes(local_scope, node_scopes)
-
-    agent = AsyncAgent(steps)
-    await agent.run(local_scope, node_scopes)
+    return fntypes.Ok(scope[node].__box__())

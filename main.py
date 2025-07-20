@@ -1,4 +1,4 @@
-from nodnod import Node, build, compose_from_steps, Scope
+from nodnod import Node, LayerAgent, Scope
 import asyncio
 
 class A(Node[int]):
@@ -26,24 +26,21 @@ class C(Node[int]):
 
 
 async def main():
-    steps = build({C})
-    print(steps)
+    agent = LayerAgent.build({C})
 
     global_scope = Scope(detail="global")
 
     async with global_scope.create_child("local") as scope:
-        await compose_from_steps(
-            steps, 
+        await agent.run(
             local_scope=scope, 
-            node_scopes={A: global_scope},
+            mapped_scopes={A: global_scope},
         )
         print(scope)
 
     async with global_scope.create_child("local2") as scope:
-        await compose_from_steps(
-            steps, 
+        await agent.run(
             local_scope=scope, 
-            node_scopes={A: global_scope},
+            mapped_scopes={A: global_scope},
         )
         print(global_scope)
         print(scope)

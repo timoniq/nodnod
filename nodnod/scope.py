@@ -1,6 +1,7 @@
 from nodnod.node import Node
 from nodnod.box import Box
 from nodnod.utils.aio import awaitable_noop
+from nodnod.error import NodeError
 import typing
 import fntypes
 import asyncio
@@ -66,3 +67,10 @@ class Scope(OrderedDict[type[Node[typing.Any]], Node[typing.Any]]):
     async def __aexit__(self, exc_type, exc, tb):
         if not self.is_closed:
             await self.close()
+
+
+def validate_local_scope_is_linked_to_node_scopes(local_scope: Scope, node_scopes: dict[type[Node], Scope]):
+    if __debug__:
+        for node, node_scope in node_scopes.items():
+            if not local_scope.has_parent(node_scope):
+                raise NodeError(f"`{node.__name__}`'s scope ({node_scope.detail}) is not a parent of local scope ({local_scope.detail})")

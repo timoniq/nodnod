@@ -6,7 +6,7 @@ from nodnod.node import Node
 
 class StepType(enum.StrEnum):
     PARALLEL = "PARALLEL"
-    COMPOSE_ONE = "COMPOSE_ONE"
+    SINGLE = "SINGLE"
 
 
 @dataclasses.dataclass
@@ -17,10 +17,10 @@ class Parallel:
 
 
 @dataclasses.dataclass
-class ComposeOne:
+class Single:
     """We have to compose one node"""
-    step_type: typing.Literal[StepType.COMPOSE_ONE]
+    step_type: typing.Literal[StepType.SINGLE]
     node: type[Node]
 
 
-type Step = Parallel | ComposeOne
+type Step = Parallel | Single
