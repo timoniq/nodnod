@@ -16,16 +16,20 @@ async def compose_coroutine(
     scope: Scope,
     dependencies: list[DependencyFuture],
 ):
-    await asyncio.gather(*dependencies)
+    for result in await asyncio.gather(*dependencies):
+        if fntypes.is_err(result):
+            raise NodeError(f"could not resolve dependencies of {node.__name__}", from_error=result.error)
 
     return await compose_node(node, scope)
 
 
 async def dependency_sequential_either_coroutine(
-    first_dependency: DependencyFuture,
+    first_dependency: tuple[type[Node], DependencyFuture],
     other_dependencies: tuple[type[Node], ...],
     futures: dict[type[Node], asyncio.Future],
     pusher: Pusher,
+    mapped_scopes: dict[type[Node], Scope],
+    local_scope: Scope,
 ) -> fntypes.Result[Box[typing.Any], NodeError]:
     """
     How sequential either is getting resolved:
@@ -38,27 +42,52 @@ async def dependency_sequential_either_coroutine(
        positive result if we have one
     """
 
-    if result := await first_dependency:
+    first_dependency_node, first_dependency_future = first_dependency
+    errors: list[NodeError] = []
+
+    result = await first_dependency_future
+    if result:
+        scope = mapped_scopes.get(first_dependency_node, local_scope)
+        scope[first_dependency_node] = first_dependency_node(result.unwrap().unbox())
         return result
+    else:
+        errors.append(result.error)
     
     for dep in other_dependencies:
         if existing_future := futures.get(dep):
-            if result := await existing_future:
+            result = await existing_future
+            if result:
                 return result
+            errors.append(result.error)
             continue
 
         pusher(futures, dep)
-        if result := await futures[dep]:
+        result = await futures[dep]
+        if result:
+            scope = mapped_scopes.get(dep, local_scope)
+            scope[dep] = dep(result.unwrap().unbox())
             return result
+        errors.append(result.error)
     
-    return fntypes.Error(NodeError("No node found"))
+    return fntypes.Error(NodeError("no option found for either", from_many=errors))
 
 
 async def dependency_concurrent_either_corountine(
     dependencies: list[DependencyFuture],
 ) -> fntypes.Result[Box[typing.Any], NodeError]:
-    done, pending = await asyncio.wait(
-        dependencies,
-        return_when=asyncio.FIRST_COMPLETED,
-    )
-    return await done.pop()
+    errors: list[NodeError] = []
+
+    candidate_dependencies = set(dependencies)
+    while candidate_dependencies:
+        done, pending = await asyncio.wait(
+            dependencies,
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for ready_result_future in done:
+            result = await ready_result_future
+            if result:
+                return result
+            errors.append(result.error)
+        candidate_dependencies = pending
+
+    return fntypes.Error(NodeError("no option found for either", from_many=errors))

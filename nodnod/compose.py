@@ -37,18 +37,25 @@ async def compose_node[T](
         return fntypes.Ok(n.unwrap().__box__())
     
     dependencies = set[Node]()
-    for dependency in node.__dependencies__:
-        # Dependency may be optional as like in ConcurrentEither.__either__[0]
+
+    dependency_nodes = getattr(
+        node, 
+        "__either__", 
+        node.__dependencies__
+    )
+    
+    for dependency in dependency_nodes:
+        # dependency can not exist for nodes in __either__ field
         if dep := scope.retrieve(dependency):
             dependencies.add(
                 dep.unwrap()
             )
-
+    
     try:
         value = node.__bound_compose__(dependencies)
         scope[node] = await initialize_node(node, value)
     
     except NodeError as e:
-        return fntypes.Error(e)
+        return fntypes.Error(NodeError(f"failed to compose {node.__name__}", from_error=e))
 
     return fntypes.Ok(scope[node].__box__())

@@ -48,13 +48,14 @@ class EventLoopAgent(Agent):
                 
                 else:
                     
-                    first_dependency = futures[node.__either__[0]]
+                    first_dependency_node = node.__either__[0]
+                    first_dependency_future = futures[first_dependency_node]
 
                     other_dependencies = node.__either__[1:]
 
                     collect_either = asyncio.Task(
                         dependency_sequential_either_coroutine(
-                            first_dependency,
+                            (first_dependency_node, first_dependency_future),
                             other_dependencies,
                             futures,
                             pusher=lambda _futures, _node: (
@@ -65,6 +66,8 @@ class EventLoopAgent(Agent):
                                     _futures,
                                 )
                             ),
+                            mapped_scopes=mapped_scopes,
+                            local_scope=local_scope,
                         )
                     )
 
