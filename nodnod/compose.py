@@ -38,12 +38,12 @@ async def compose_node[T](
     
     dependencies = set[Node]()
     for dependency in node.__dependencies__:
-        dependencies.add(
-            scope
-            .retrieve(dependency)
-            .expect(NodeError("Dependency was not resolved"))
-        )
-    
+        # Dependency may be optional as like in ConcurrentEither.__either__[0]
+        if dep := scope.retrieve(dependency):
+            dependencies.add(
+                dep.unwrap()
+            )
+
     try:
         value = node.__bound_compose__(dependencies)
         scope[node] = await initialize_node(node, value)

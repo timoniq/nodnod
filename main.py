@@ -1,11 +1,12 @@
 from nodnod import Node, EventLoopAgent, Scope
-from nodnod.interface.either import SequentialEither
+from nodnod.interface.either import SequentialEither, ConcurrentEither
 import asyncio
 
 class A(Node[int]):
     @classmethod
     async def __compose__(cls):
         print("calculating a")
+        await asyncio.sleep(1)
         yield 11
         print("closing A")
 
@@ -18,7 +19,7 @@ class B(Node[int]):
         print("closing b")
 
 
-class AorB(SequentialEither):
+class AorB(ConcurrentEither):
     __either__ = (A, B)
 
 

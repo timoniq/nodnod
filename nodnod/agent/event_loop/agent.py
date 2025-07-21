@@ -8,12 +8,17 @@ import asyncio
 import typing
 
 class EventLoopAgent(Agent):
-    def __init__(self, traversed_nodes: Queue) -> None:
+    def __init__(
+        self, 
+        traversed_nodes: Queue,
+        final_nodes: typing.Iterable[type[Node]] | None = None,
+    ) -> None:
         self.traversed_nodes = traversed_nodes
+        self.final_nodes = final_nodes or traversed_nodes
 
     @classmethod
     def build(cls, nodes: set[type[Node]]) -> typing.Self:
-        return cls(traversed_nodes=traverse_all(nodes))
+        return cls(traversed_nodes=traverse_all(nodes), final_nodes=nodes)
     
     def push_futures(
         self, 
@@ -87,8 +92,8 @@ class EventLoopAgent(Agent):
             futures[node] = task
     
     async def run(
-        self, 
-        local_scope: Scope, 
+        self,
+        local_scope: Scope,
         mapped_scopes: dict[type[Node], Scope],
         futures: dict[type[Node], asyncio.Future] | None = None,
     ):
@@ -98,4 +103,10 @@ class EventLoopAgent(Agent):
             mapped_scopes,
             futures,
         )
-        await asyncio.gather(*futures.values())
+        # Push all network into loop
+        for future in futures.values():
+            asyncio.ensure_future(future)
+        
+        final_futures = {futures[node] for node in self.final_nodes}
+        
+        await asyncio.gather(*final_futures)
