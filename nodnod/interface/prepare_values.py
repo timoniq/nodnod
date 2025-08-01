@@ -4,6 +4,7 @@ from nodnod.node import Node
 
 
 def prepare_values(values: dict[typing.Any, Node[typing.Any]]) -> dict[str, typing.Any]:
+    """Unwraps scalar nodes into scalars and returns new dict"""
     prepared_values = {}
 
     for key, node in values.items():

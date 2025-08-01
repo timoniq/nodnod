@@ -29,7 +29,7 @@ class scalar_node[T]:  # noqa: N801
         bases = [node_class]
         node_namespace = dict(is_scalar=True, __module__=node_class.__module__)
 
-        if not any(issubclass(base, Node) for base in bases if isinstance(base, type)):
+        if not any(issubclass(base, Node) for base in types.resolve_bases(bases) if isinstance(base, type)):
             bases.append(Node)
 
         return type(node_class.__name__, tuple(types.resolve_bases(bases)), node_namespace)

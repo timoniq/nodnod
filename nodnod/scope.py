@@ -68,6 +68,14 @@ class Scope(OrderedDict[type[Node[typing.Any]], Node[typing.Any]]):
         if not self.is_closed:
             await self.close()
 
+    def merge(self) -> "Scope":
+        scope = Scope(detail="merge")
+        part = self
+        while part is not None:
+            scope.update(part)
+            part = part.prev
+        return scope
+
 
 def validate_local_scope_is_linked_to_node_scopes(local_scope: Scope, node_scopes: dict[type[Node], Scope]):
     if __debug__:

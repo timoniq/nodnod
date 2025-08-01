@@ -48,7 +48,7 @@ async def main():
             local_scope=scope, 
             mapped_scopes={A: global_scope},
         )
-        print(prepare_values(global_scope))
+        print(prepare_values(scope.merge()))
 
     # async with global_scope.create_child("local2") as scope:
     #     await agent.run(
