@@ -3,7 +3,7 @@ from nodnod.compose import ComposeResponse
 import fntypes
 
 
-class Either[*Ts](Node[fntypes.Variative], abstract=True):
+class Either(Node[fntypes.Variative], abstract=True):
     concurrent: bool
     __either__: tuple[type[Node], ...]
     

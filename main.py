@@ -1,12 +1,17 @@
-from nodnod import Node, EventLoopAgent, Scope, NodeError
-from nodnod.interface.either import SequentialEither, ConcurrentEither
 import asyncio
 
-class A(Node[int]):
+from nodnod import EventLoopAgent, Node, NodeError, Scope
+from nodnod.interface.either import ConcurrentEither, SequentialEither
+from nodnod.interface.prepare_values import prepare_values
+from nodnod.interface.scalar import scalar_node
+
+
+@scalar_node
+class A:
     @classmethod
     async def __compose__(cls):
         print("calculating a")
-        raise NodeError("im error")
+        # raise NodeError("im error")
         yield 11
         print("closing A")
 
@@ -15,7 +20,7 @@ class B(Node[int]):
     @classmethod
     async def __compose__(cls):
         print("calculating b (should never)")
-        raise NodeError("im lol error")
+        # raise NodeError("im lol error")
         yield 5
         print("closing b")
 
@@ -43,15 +48,15 @@ async def main():
             local_scope=scope, 
             mapped_scopes={A: global_scope},
         )
-        print(scope)
+        print(prepare_values(global_scope))
 
-    async with global_scope.create_child("local2") as scope:
-        await agent.run(
-            local_scope=scope, 
-            mapped_scopes={A: global_scope},
-        )
-        print(global_scope)
-        print(scope)
+    # async with global_scope.create_child("local2") as scope:
+    #     await agent.run(
+    #         local_scope=scope, 
+    #         mapped_scopes={A: global_scope},
+    #     )
+    #     print(global_scope)
+    #     print(scope)
 
     await global_scope.close()
 
