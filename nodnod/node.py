@@ -3,6 +3,7 @@ from nodnod.utils.generator import generator_asend, generator_send
 from nodnod.utils.aio import awaitable_noop
 from nodnod.utils.resolve_signature import resolve_signature
 from nodnod.utils.misc import reverse_dict
+from nodnod.utils.prepare_values import prepare_value
 import fntypes
 import typing
 import types
@@ -41,8 +42,8 @@ class Node[T]:
                     fntypes.F[set["Node"]]()
                     .then(
                         lambda nodes: (
-                            [node for node in nodes if type(node) in signature.args.values()],
-                            {kwargs_names_by_type[type(node)]: node for node in nodes if type(node) in kwargs_names_by_type}
+                            [prepare_value(node) for node in nodes if type(node) in signature.args.values()],
+                            {kwargs_names_by_type[type(node)]: prepare_value(node) for node in nodes if type(node) in kwargs_names_by_type}
                         )
                     ).then(
                         lambda params: cls.__compose__(*params[0], **params[1])

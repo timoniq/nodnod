@@ -2,7 +2,7 @@ import asyncio
 
 from nodnod import EventLoopAgent, Node, NodeError, Scope
 from nodnod.interface.either import ConcurrentEither, SequentialEither
-from nodnod.interface.prepare_values import prepare_values
+from nodnod.utils.prepare_values import prepare_values
 from nodnod.interface.scalar import scalar_node
 
 
@@ -38,8 +38,22 @@ class C(Node[int]):
         print("close c")
 
 
+@scalar_node
+class Lol:
+    @classmethod
+    def __compose__(cls) -> str:
+        return "hello"
+
+
+@scalar_node
+class LOL:
+    @classmethod
+    def __compose__(cls, x: Lol) -> str:
+        return x.upper()
+
+
 async def main():
-    agent = EventLoopAgent.build({C})
+    agent = EventLoopAgent.build({C, LOL})
 
     global_scope = Scope(detail="global")
 
