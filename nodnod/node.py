@@ -16,6 +16,7 @@ class Node[T]:
     __dependencies__: set[type["Node"]] = None # type: ignore
     __bound_compose__: typing.Callable[[set["Node"]], ComposeResponse[T]] = None # type: ignore
     __traverse__: list[type["Node"]] = None # type: ignore
+    is_scalar: typing.ClassVar[bool] = False
 
     def __init__(self, value: T, generator: Generator[T] | None = None):
         self.value = value
