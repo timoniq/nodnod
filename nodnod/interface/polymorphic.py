@@ -1,22 +1,29 @@
-from nodnod.node import Node
-from nodnod.interface.either import Either
-from nodnod.utils.prepare_values import prepare_value
-import fntypes
 import typing
-import types
+
+import fntypes
+
+from nodnod.interface.either import Either
+from nodnod.node import ComposeResponse, Node
+from nodnod.utils.create_node import create_node
+
+CASE_MARK: typing.Final = "IS_CASE"
 
 
-CASE_MARK = "IS_CASE"
+def case[Cls, R, **P](case_method: typing.Callable[typing.Concatenate[Cls, P], R], /) -> typing.Callable[P, R]:
+    if isinstance(case_method, classmethod):
+        func = case_method.__func__
+    else:
+        func = case_method
+        case_method = classmethod(case_method)  # type: ignore
 
-def case[Cls, R, **P](case_method: typing.Callable[typing.Concatenate[Cls, P], R]) -> typing.Callable[P, R]:
-    setattr(case_method, CASE_MARK, True)
-    return classmethod(case_method)  # type: ignore
+    setattr(func, CASE_MARK, True)
+    return case_method  # type: ignore
 
 
-def collect_cases(node_class: type) -> list[typing.Callable]:
+def collect_cases(node_class: type[typing.Any]) -> list[typing.Callable[..., ComposeResponse[typing.Any]]]:
     cases = []
     for item in node_class.__dict__.values():
-        if getattr(getattr(item, "__func__", None), CASE_MARK, None):
+        if isinstance(item, classmethod) and getattr(item.__func__, CASE_MARK, None) is True:
             cases.append(item)
     return cases
 
@@ -33,24 +40,27 @@ class PolymorphicNode[T](Either, abstract=True):
         return result
 
 
-class polymorphic[T]: # noqa: N801
+class polymorphic[T]:  # noqa: N801
     POLYMORPHIC_NODE_CLS = PolymorphicNode
 
-    def __new__(cls, node_class: type) -> type[PolymorphicNode[T]]:
-        cases = collect_cases(node_class)
+    def __new__(cls, node_class: type[typing.Any]) -> type[PolymorphicNode[T]]:
+        case_nodes: list[type[Node[typing.Any]]] = []
 
-        case_nodes = []
-
-        for case in cases:
-            node = type(
-                node_class.__name__ + ":" + case.__name__, 
-                tuple(types.resolve_bases([node_class, Node])),
-                dict(__compose__=case),
+        for case in collect_cases(node_class):
+            node = create_node(
+                name=node_class.__name__ + ":" + case.__name__,
+                base_node=Node,
+                bases=(node_class,),
+                namespace=dict(__compose__=case, __module__=node_class.__module__),
             )
             case_nodes.append(node)
-                
-        return type(
-            node_class.__name__,
-            tuple(types.resolve_bases([cls.POLYMORPHIC_NODE_CLS])),
-            dict(__either__=tuple(case_nodes))
+
+        return create_node(
+            name=node_class.__name__,
+            base_node=cls.POLYMORPHIC_NODE_CLS,
+            bases=tuple(),
+            namespace=dict(__either__=tuple(case_nodes)),
         )
+
+
+__all__ = ("PolymorphicNode", "polymorphic", "case", "collect_cases")

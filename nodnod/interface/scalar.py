@@ -1,14 +1,14 @@
-import types
 import typing
 
 from nodnod.node import Node
+from nodnod.utils.create_node import create_node
 
-type Generator[T] = typing.Generator[typing.Any, typing.Any, T] | typing.AsyncGenerator[T, typing.Any]
+type Generator[T] = typing.Generator[T, typing.Any, typing.Any] | typing.AsyncGenerator[T, typing.Any]
 
 
 class Composable[T](typing.Protocol):
     @classmethod
-    def __compose__(cls, *args, **kwargs) -> T:
+    def __compose__(cls, *args: typing.Any, **kwargs: typing.Any) -> T:
         ...
 
 
@@ -26,14 +26,16 @@ class scalar_node[T]:  # noqa: N801
     def __new__(cls, x: T, /) -> type[T]: ...
 
     def __new__(cls, node_class: typing.Any, /) -> typing.Any:
-        bases = [node_class]
-        node_namespace = dict(is_scalar=True, __module__=node_class.__module__)
+        if not any(issubclass(base, Node) for base in node_class.__bases__):
+            return create_node(
+                name=node_class.__name__,
+                base_node=Node,
+                bases=(node_class,),
+                namespace=dict(is_scalar=True, __module__=node_class.__module__),
+            )
 
-        if not any(issubclass(base, Node) for base in types.resolve_bases(bases) if isinstance(base, type)):
-            bases.append(Node)
-
-        return type(node_class.__name__, tuple(types.resolve_bases(bases)), node_namespace)
+        node_class.is_scalar = True
+        return node_class
 
 
 __all__ = ("scalar_node",)
-

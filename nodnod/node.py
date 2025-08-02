@@ -13,13 +13,17 @@ type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, N
 type ComposeResponse[T] = T | typing.Awaitable[T] | Generator[T]
 
 
-class Node[T]:
+class Node[T = typing.Any]:
+    __slots__ = ("value", "generator", "__dict__")
+    __match_args__ = ("value", "generator")
+    
     __dependencies__: set[type["Node"]] = None # type: ignore
     __bound_compose__: typing.Callable[[set["Node"]], ComposeResponse[T]] = None # type: ignore
     __traverse__: list[type["Node"]] = None # type: ignore
+
     is_scalar: typing.ClassVar[bool] = False
 
-    def __init__(self, value: T, generator: Generator[T] | None = None):
+    def __init__(self, value: T, generator: Generator[T] | None = None) -> None:
         self.value = value
         self.generator = generator
 
