@@ -23,7 +23,7 @@ class Scope(OrderedDict[type[Node[typing.Any]], Node[typing.Any]]):
         return fntypes.Some(self[key])
     
     def __repr__(self) -> str:
-        return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {node.value}" for node_t, node in self.items()) if self else "(empty)")
+        return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {node.value!r}" for node_t, node in self.items()) if self else "(empty)")
     
     def close(self) -> typing.Awaitable[typing.Any]:
         if self.is_closed:
