@@ -36,13 +36,13 @@ class Node[T]:
 
             if cls.__bound_compose__ is None:
                 # If not set, prepare the dependencies distribution
-                kwargs_names_by_type = reverse_dict(signature.kwargs)
+                kwargs_names_by_type = reverse_dict(signature.kwargs | signature.args)
 
                 cls.__bound_compose__ = (
                     fntypes.F[set["Node"]]()
                     .then(
                         lambda nodes: (
-                            [prepare_value(node) for node in nodes if type(node) in signature.args.values()],
+                            [],
                             {kwargs_names_by_type[type(node)]: prepare_value(node) for node in nodes if type(node) in kwargs_names_by_type}
                         )
                     ).then(

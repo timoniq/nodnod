@@ -6,6 +6,7 @@ from nodnod.agent.event_loop.coroutine import compose_coroutine, dependency_sequ
 from nodnod.builder.build_queue import traverse_all, Queue
 import asyncio
 import typing
+import fntypes
 
 class EventLoopAgent(Agent):
     def __init__(
@@ -112,4 +113,7 @@ class EventLoopAgent(Agent):
         
         final_futures = {futures[node] for node in self.final_nodes}
         
-        await asyncio.gather(*final_futures)
+        results = await asyncio.gather(*final_futures)
+        for result in results:
+            if fntypes.is_err(result):
+                raise result.error

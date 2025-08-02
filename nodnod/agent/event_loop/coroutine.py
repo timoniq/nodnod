@@ -15,10 +15,10 @@ async def compose_coroutine(
     node: type[Node],
     scope: Scope,
     dependencies: list[DependencyFuture],
-):
+) -> fntypes.Result[Box[typing.Any], NodeError]:
     for result in await asyncio.gather(*dependencies):
         if fntypes.is_err(result):
-            raise NodeError(f"could not resolve dependencies of {node.__name__}", from_error=result.error)
+            return fntypes.Error(NodeError(f"could not resolve dependencies of {node.__name__}", from_error=result.error))
 
     return await compose_node(node, scope)
 

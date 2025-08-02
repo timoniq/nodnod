@@ -5,28 +5,37 @@ from nodnod.interface.either import ConcurrentEither, SequentialEither
 from nodnod.utils.prepare_values import prepare_values
 from nodnod.interface.scalar import scalar_node
 
+from nodnod.interface.polymorphic import polymorphic, case
+
+
 
 @scalar_node
 class A:
     @classmethod
     async def __compose__(cls):
-        print("calculating a")
-        # raise NodeError("im error")
-        yield 11
-        print("closing A")
+        yield int(11)
 
 
 class B(Node[int]):
     @classmethod
     async def __compose__(cls):
-        print("calculating b (should never)")
-        # raise NodeError("im lol error")
         yield 5
-        print("closing b")
 
 
 class AorB(SequentialEither):
     __either__ = (A, B)
+
+
+@scalar_node
+@polymorphic[int]
+class MyInt:
+    @case
+    def from_a(cls, a: A) -> int:
+        return a + 8
+    
+    @case
+    def from_b(cls, b: B) -> int:
+        return b.value
 
 
 class C(Node[int]):
@@ -48,8 +57,9 @@ class Lol:
 @scalar_node
 class LOL:
     @classmethod
-    def __compose__(cls, x: Lol) -> str:
-        return x.upper()
+    def __compose__(cls, x: Lol, mi: MyInt) -> str:
+        print(x, mi)
+        return x.upper() * mi
 
 
 async def main():

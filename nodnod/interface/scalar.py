@@ -8,7 +8,7 @@ type Generator[T] = typing.Generator[typing.Any, typing.Any, T] | typing.AsyncGe
 
 class Composable[T](typing.Protocol):
     @classmethod
-    def __compose__(cls) -> T:
+    def __compose__(cls, *args, **kwargs) -> T:
         ...
 
 
