@@ -9,21 +9,26 @@ import secrets
 from collections import OrderedDict
 
 
-class Scope(OrderedDict[type[Node[typing.Any]], Value[typing.Any]]):
+class Scope(OrderedDict[type, Value[typing.Any]]):
     def __init__(self, prev: "Scope | None" = None, detail: str | None = None):
         self.prev = prev
         self.detail = detail or secrets.token_hex(5)
         self.is_closed = False
+
+        super().__init__([(Scope, Value(Scope, self))])
     
-    def retrieve[T](self, key: type[Node[T]]) -> fntypes.Option[Value[T]]:
+    def retrieve[T](self, key: type) -> fntypes.Option[Value[T]]:
         if key not in self:
             if not self.prev:
                 return fntypes.Nothing()
             return self.prev.retrieve(key)
         return fntypes.Some(self[key])
     
+    def push(self, value: Value[typing.Any]):
+        self[value.node_cls] = value
+    
     def __repr__(self) -> str:
-        return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {value!r}" for node_t, value in self.items()) if self else "(empty)")
+        return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {value!r}" for node_t, value in self.items() if value.value is not self) if self else "(empty)")
     
     def close(self) -> typing.Awaitable[typing.Any]:
         if self.is_closed:

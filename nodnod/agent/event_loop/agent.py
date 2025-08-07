@@ -1,9 +1,9 @@
 from nodnod.agent.base import Agent
-from nodnod.node import Node
+from nodnod.node import Node, Queue
 from nodnod.scope import Scope
 from nodnod.interface.either import Either
 from nodnod.agent.event_loop.coroutine import compose_coroutine, dependency_sequential_either_coroutine, dependency_concurrent_either_corountine
-from nodnod.builder.build_queue import traverse_all, Queue
+from nodnod.builder.build_queue import traverse_all
 import asyncio
 import typing
 import fntypes
@@ -11,7 +11,7 @@ import fntypes
 class EventLoopAgent(Agent):
     def __init__(
         self, 
-        traversed_nodes: Queue,
+        traversed_nodes: "Queue",
         final_nodes: typing.Iterable[type[Node]] | None = None,
     ) -> None:
         self.traversed_nodes = traversed_nodes
@@ -60,7 +60,7 @@ class EventLoopAgent(Agent):
                             other_dependencies,
                             futures,
                             pusher=lambda _futures, _node: (
-                                self.__class__(_node.__traverse__)
+                                self.__class__(getattr(_node, "__traverse__"))
                                 .push_futures(
                                     local_scope, 
                                     mapped_scopes, 

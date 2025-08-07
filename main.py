@@ -1,12 +1,21 @@
 import asyncio
+import dataclasses
 
-from nodnod import EventLoopAgent, Node, NodeError, Scope
+from nodnod import EventLoopAgent, Node, NodeError, Scope, DataNode, polymorphic, case, scalar_node, Value
 from nodnod.interface.either import ConcurrentEither, SequentialEither
 from nodnod.utils.prepare_values import prepare_values
-from nodnod.interface.scalar import scalar_node
 
 from nodnod.interface.polymorphic import polymorphic, case
 
+
+class Interface:
+    def get_lol(self) -> str:
+        ...
+
+
+class MyInterface:
+    def get_lol(self) -> str:
+        return "megalol"
 
 
 @scalar_node
@@ -16,6 +25,7 @@ class A:
         yield int(11)
 
 
+@scalar_node
 class B(Node[int]):
     @classmethod
     async def __compose__(cls):
@@ -35,23 +45,28 @@ class MyInt:
     
     @case
     def from_b(cls, b: B) -> int:
-        return b.value
+        return b
 
 
-class C(Node[int]):
+@dataclasses.dataclass
+class C(DataNode):
+    x: float
+    y: float
+
     @classmethod
     def __compose__(cls, aorb: AorB):
         print(aorb)
         print("calculating c")
-        yield aorb.value.v.value
+        print(aorb.value)
+        return cls(1.2, aorb.value / 2)
         print("close c")
 
 
 @scalar_node
 class Lol:
     @classmethod
-    def __compose__(cls) -> str:
-        return "hello"
+    def __compose__(cls, i: Interface) -> str:
+        return i.get_lol()
 
 
 @scalar_node
@@ -63,9 +78,10 @@ class LOL:
 
 
 async def main():
-    agent = EventLoopAgent.build({C, LOL})
+    agent = EventLoopAgent.build({LOL, C})
 
     global_scope = Scope(detail="global")
+    global_scope.push(Value(Interface, MyInterface()))
 
     async with global_scope.create_child("local") as scope:
         await agent.run(

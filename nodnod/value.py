@@ -1,4 +1,4 @@
-from nodnod.node import Generator, Node
+from nodnod.node import Generator
 from nodnod.utils.generator import generator_asend, generator_send
 from nodnod.utils.aio import awaitable_noop
 import types
@@ -6,8 +6,8 @@ import typing
 
 
 class Value[T]:
-    def __init__(self, node_cls: type[Node], value: T, generator: Generator[T] | None = None):
-        self.node_cls = node_cls
+    def __init__(self, cls: type, value: T, generator: Generator[T] | None = None):
+        self.node_cls = cls
         self.value = value
         self.generator = generator
 

@@ -3,6 +3,7 @@ from .error import NodeError
 from .interface import *
 from .node import Node
 from .scope import Scope
+from .value import Value
 
 __all__ = (
     "LayerAgent",
@@ -16,4 +17,5 @@ __all__ = (
     "scalar_node",
     "polymorphic",
     "case",
+    "Value",
 )

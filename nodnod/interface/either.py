@@ -30,6 +30,8 @@ class Either(Node[fntypes.Variative], abstract=True):
                 # The next nodes will be set as dependency sequentially
                 cls.__dependencies__ = {cls.__either__[0]}
 
+            cls.__injected_types__ = set()
+
 
 class SequentialEither(Either, abstract=True):
     concurrent = False

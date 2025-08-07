@@ -53,6 +53,13 @@ async def compose_node[T](
                 dep.unwrap()
             )
 
+    for injected_type in node.__injected_types__:
+        dependencies.add(
+            local_scope
+            .retrieve(injected_type)
+            .expect(NodeError(f"couldn't inject {injected_type.__name__} because it was not set"))
+        )
+    
     try:
         value = node.__bound_compose__(dependencies)
         node_scope[node] = await initialize_node(node, value)
