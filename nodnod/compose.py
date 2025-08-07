@@ -28,12 +28,13 @@ async def initialize_node[T](node_cls: type[Node], value: ComposeResponse[T]) ->
 
 async def compose_node[T](
     node: type[Node[T]],
-    scope: Scope,
+    node_scope: Scope,
+    local_scope: Scope,
 ) -> fntypes.Result[Box[T], NodeError]:
     """Composes node into a boxed value.
     If node is already composed in scope, then returns box value from scope"""
 
-    if n := scope.retrieve(node):
+    if n := node_scope.retrieve(node):
         return fntypes.Ok(n.unwrap().__box__())
     
     dependencies = set[Node]()
@@ -46,16 +47,16 @@ async def compose_node[T](
     
     for dependency in dependency_nodes:
         # dependency can not exist for nodes in __either__ field
-        if dep := scope.retrieve(dependency):
+        if dep := local_scope.retrieve(dependency):
             dependencies.add(
                 dep.unwrap()
             )
-    
+
     try:
         value = node.__bound_compose__(dependencies)
-        scope[node] = await initialize_node(node, value)
+        node_scope[node] = await initialize_node(node, value)
     
     except NodeError as e:
         return fntypes.Error(NodeError(f"failed to compose {node.__name__}", from_error=e))
 
-    return fntypes.Ok(scope[node].__box__())
+    return fntypes.Ok(node_scope[node].__box__())

@@ -13,14 +13,15 @@ type Pusher = typing.Callable[[dict[type[Node], asyncio.Future], type[Node]], No
 
 async def compose_coroutine(
     node: type[Node],
-    scope: Scope,
+    node_scope: Scope,
+    local_scope: Scope,
     dependencies: list[DependencyFuture],
 ) -> fntypes.Result[Box[typing.Any], NodeError]:
     for result in await asyncio.gather(*dependencies):
         if fntypes.is_err(result):
             return fntypes.Error(NodeError(f"could not resolve dependencies of {node.__name__}", from_error=result.error))
 
-    return await compose_node(node, scope)
+    return await compose_node(node, node_scope, local_scope)
 
 
 async def dependency_sequential_either_coroutine(

@@ -76,6 +76,7 @@ class EventLoopAgent(Agent):
                     compose_coroutine(
                         node,
                         mapped_scopes.get(node, local_scope),
+                        local_scope,
                         [collect_either],
                     )
                 )
@@ -89,6 +90,7 @@ class EventLoopAgent(Agent):
                     compose_coroutine(
                         node, 
                         mapped_scopes.get(node, local_scope), 
+                        local_scope,
                         dependencies,
                     )
                 )

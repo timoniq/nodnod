@@ -52,7 +52,7 @@ class LayerAgent(Agent):
                 
                 case Parallel(nodes=nodes):
                     coros = [
-                        compose_node(node, mapped_scopes.get(node, local_scope))
+                        compose_node(node, mapped_scopes.get(node, local_scope), local_scope)
                         for node in nodes
                     ]
                     results = await asyncio.gather(*coros, return_exceptions=True)
@@ -65,5 +65,5 @@ class LayerAgent(Agent):
                         initiations[node] = result  # type: ignore
                 
                 case Single(node=node):
-                    result = await compose_node(node, mapped_scopes.get(node, local_scope))
+                    result = await compose_node(node, mapped_scopes.get(node, local_scope), local_scope)
                     initiations[node] = result
