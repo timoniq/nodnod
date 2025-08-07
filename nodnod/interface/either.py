@@ -1,15 +1,19 @@
 from nodnod.node import Node
 from nodnod.compose import ComposeResponse
 import fntypes
+import typing
 
 
 class Either(Node[fntypes.Variative], abstract=True):
     concurrent: bool
     __either__: tuple[type[Node], ...]
+
+    def __init__(self, value: typing.Any):
+        self.value = value
     
     @classmethod
     def __compose__(cls, node: fntypes.Variative):
-        return node
+        return cls(node.v.value)
     
     @classmethod
     def __bound_compose__(cls, nodes: set[Node]) -> ComposeResponse:
