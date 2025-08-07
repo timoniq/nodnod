@@ -4,10 +4,10 @@ from nodnod.compose import compose_node
 from nodnod.node import Node
 from nodnod.scope import Scope
 import fntypes
-from nodnod.box import Box
+from nodnod.value import Value
 from nodnod.error import NodeError
 
-type DependencyFuture[T] = asyncio.Future[fntypes.Result[Box[T], NodeError]]
+type DependencyFuture[T] = asyncio.Future[fntypes.Result[Value[T], NodeError]]
 type Pusher = typing.Callable[[dict[type[Node], asyncio.Future], type[Node]], None]
 
 
@@ -16,7 +16,7 @@ async def compose_coroutine(
     node_scope: Scope,
     local_scope: Scope,
     dependencies: list[DependencyFuture],
-) -> fntypes.Result[Box[typing.Any], NodeError]:
+) -> fntypes.Result[Value[typing.Any], NodeError]:
     for result in await asyncio.gather(*dependencies):
         if fntypes.is_err(result):
             return fntypes.Error(NodeError(f"could not resolve dependencies of {node.__name__}", from_error=result.error))
@@ -31,7 +31,7 @@ async def dependency_sequential_either_coroutine(
     pusher: Pusher,
     mapped_scopes: dict[type[Node], Scope],
     local_scope: Scope,
-) -> fntypes.Result[Box[typing.Any], NodeError]:
+) -> fntypes.Result[Value[typing.Any], NodeError]:
     """
     How sequential either is getting resolved:
 
@@ -49,7 +49,7 @@ async def dependency_sequential_either_coroutine(
     result = await first_dependency_future
     if result:
         scope = mapped_scopes.get(first_dependency_node, local_scope)
-        scope[first_dependency_node] = first_dependency_node(result.unwrap().unbox())
+        scope[first_dependency_node] = result.unwrap()
         return result
     else:
         errors.append(result.error)
@@ -66,7 +66,7 @@ async def dependency_sequential_either_coroutine(
         result = await futures[dep]
         if result:
             scope = mapped_scopes.get(dep, local_scope)
-            scope[dep] = dep(result.unwrap().unbox())
+            scope[dep] = result.unwrap()
             return result
         errors.append(result.error)
     
@@ -75,7 +75,7 @@ async def dependency_sequential_either_coroutine(
 
 async def dependency_concurrent_either_corountine(
     dependencies: list[DependencyFuture],
-) -> fntypes.Result[Box[typing.Any], NodeError]:
+) -> fntypes.Result[Value[typing.Any], NodeError]:
     errors: list[NodeError] = []
 
     candidate_dependencies = set(dependencies)

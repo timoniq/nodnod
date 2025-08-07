@@ -1,5 +1,5 @@
 from nodnod.node import Node
-from nodnod.box import Box
+from nodnod.value import Value
 from nodnod.utils.aio import awaitable_noop
 from nodnod.error import NodeError
 import typing
@@ -9,13 +9,13 @@ import secrets
 from collections import OrderedDict
 
 
-class Scope(OrderedDict[type[Node[typing.Any]], Node[typing.Any]]):
+class Scope(OrderedDict[type[Node[typing.Any]], Value[typing.Any]]):
     def __init__(self, prev: "Scope | None" = None, detail: str | None = None):
         self.prev = prev
         self.detail = detail or secrets.token_hex(5)
         self.is_closed = False
     
-    def retrieve[T](self, key: type[Node[T]]) -> fntypes.Option[Node[T]]:
+    def retrieve[T](self, key: type[Node[T]]) -> fntypes.Option[Value[T]]:
         if key not in self:
             if not self.prev:
                 return fntypes.Nothing()
@@ -23,7 +23,7 @@ class Scope(OrderedDict[type[Node[typing.Any]], Node[typing.Any]]):
         return fntypes.Some(self[key])
     
     def __repr__(self) -> str:
-        return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {node.value!r}" for node_t, node in self.items()) if self else "(empty)")
+        return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {value!r}" for node_t, value in self.items()) if self else "(empty)")
     
     def close(self) -> typing.Awaitable[typing.Any]:
         if self.is_closed:
@@ -33,8 +33,8 @@ class Scope(OrderedDict[type[Node[typing.Any]], Node[typing.Any]]):
         coros = []
 
         while self:
-            _, node = self.popitem()
-            result = node.close()
+            _, value = self.popitem()
+            result = value.close()
             if not isinstance(result, awaitable_noop):
                 coros.append(result)
         

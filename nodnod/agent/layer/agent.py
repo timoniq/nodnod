@@ -1,5 +1,4 @@
 from typing import Self
-from nodnod.node import Queue
 from nodnod.agent.layer.steps import Step, Parallel, Single, StepType
 from nodnod.builder.build_parallels import build_parallels
 
@@ -7,7 +6,7 @@ from nodnod.agent.base import Agent
 from nodnod.node import Node
 from nodnod.scope import Scope, validate_local_scope_is_linked_to_node_scopes
 from nodnod.error import NodeError
-from nodnod.box import Box
+from nodnod.value import Value
 import asyncio
 import fntypes
 
@@ -45,7 +44,7 @@ class LayerAgent(Agent):
         from nodnod.compose import compose_node
 
         validate_local_scope_is_linked_to_node_scopes(local_scope, mapped_scopes)
-        initiations = dict[type[Node], fntypes.Result[Box[type[Node]], NodeError]]()
+        initiations = dict[type[Node], fntypes.Result[Value[type[Node]], NodeError]]()
 
         for step in self.steps:
             match step:

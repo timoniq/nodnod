@@ -1,31 +1,20 @@
-from nodnod.box import Box
-from nodnod.utils.generator import generator_asend, generator_send
-from nodnod.utils.aio import awaitable_noop
 from nodnod.utils.resolve_signature import resolve_signature
 from nodnod.utils.misc import reverse_dict
-from nodnod.utils.prepare_values import prepare_value
 import fntypes
 import typing
-import types
 
+
+if typing.TYPE_CHECKING:
+    from nodnod.value import Value
 
 type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, None]
-type ComposeResponse[T] = T | typing.Awaitable[T] | Generator[T]
+type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
 
 
-class Node[T = typing.Any]:
-    __slots__ = ("value", "generator", "__dict__")
-    __match_args__ = ("value", "generator")
-    
+class Node[T = typing.Any]:    
     __dependencies__: set[type["Node"]] = None # type: ignore
-    __bound_compose__: typing.Callable[[set["Node"]], ComposeResponse[T]] = None # type: ignore
+    __bound_compose__: typing.Callable[[set["Value"]], ComposeResponse[T]] = None # type: ignore
     __traverse__: list[type["Node"]] = None # type: ignore
-
-    is_scalar: typing.ClassVar[bool] = False
-
-    def __init__(self, value: T, generator: Generator[T] | None = None) -> None:
-        self.value = value
-        self.generator = generator
 
     def __init_subclass__(cls, abstract: bool = False) -> None:
         from nodnod.builder.build_queue import build_queue
@@ -43,11 +32,11 @@ class Node[T = typing.Any]:
                 kwargs_names_by_type = reverse_dict(signature.kwargs | signature.args)
 
                 cls.__bound_compose__ = (
-                    fntypes.F[set["Node"]]()
+                    fntypes.F[set["Value"]]()
                     .then(
-                        lambda nodes: (
+                        lambda values: (
                             [],
-                            {kwargs_names_by_type[type(node)]: prepare_value(node) for node in nodes if type(node) in kwargs_names_by_type}
+                            {kwargs_names_by_type[value.node_cls]: value.__unbox__() for value in values if value.node_cls in kwargs_names_by_type}
                         )
                     ).then(
                         lambda params: cls.__compose__(*params[0], **params[1])
@@ -60,26 +49,8 @@ class Node[T = typing.Any]:
     def __compose__(cls, *args, **kwargs) -> ComposeResponse[T]:
         ...
     
-    def __box__(self) -> Box[T]:
-        return Box(self.value)
-    
     def __repr__(self) -> str:
-        return f"<node {self.__class__.__name__} = {self.value}>"
-
-    def close(self) -> typing.Awaitable[typing.Any]:
-        if self.generator is None:
-            return awaitable_noop()
-        
-        if isinstance(self.generator, types.AsyncGeneratorType):
-            result = generator_asend(self.generator)
-            self.generator = None
-            return result
-        
-        elif isinstance(self.generator, types.GeneratorType):
-            generator_send(self.generator)
-        
-        self.generator = None
-        return awaitable_noop()
+        return f"<node {self.__class__.__name__}>"
 
 
 type Queue = list[type[Node]]

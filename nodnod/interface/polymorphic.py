@@ -31,13 +31,13 @@ def collect_cases(node_class: type[typing.Any]) -> list[typing.Callable[..., Com
 class PolymorphicNode[T](Either, abstract=True):
     __either__: tuple[type[T], ...]
     concurrent = False
+    is_scalar = False
 
     @classmethod
     def __compose__(cls, node: fntypes.Variative) -> T:
-        result = node.v
         if cls.is_scalar:
-            return result.value
-        return result
+            return node.v.value
+        return node.v
 
 
 class polymorphic[T]:  # noqa: N801
