@@ -58,7 +58,7 @@ class polymorphic[T]:  # noqa: N801
         return create_node(
             name=node_class.__name__,
             base_node=cls.POLYMORPHIC_NODE_CLS,
-            bases=tuple(),
+            bases=(node_class,),
             namespace=dict(__either__=tuple(case_nodes)),
         )
 
