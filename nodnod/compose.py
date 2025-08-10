@@ -57,14 +57,13 @@ async def compose_node[T](
         dependencies.add(
             local_scope
             .retrieve(injected_type)
-            .expect(NodeError(f"couldn't inject {injected_type.__name__} because it was not set"))
+            .expect(NodeError(f"couldn't inject `{injected_type.__name__}` because it was not set"))
         )
     
     try:
         value = node.__bound_compose__(dependencies)
-        node_scope[node] = await initialize_node(node, value)
-    
+        node_scope[node] = await initialize_node(getattr(node, "__cls__", node), value)
     except NodeError as e:
-        return fntypes.Error(NodeError(f"failed to compose {node.__name__}", from_error=e))
+        return fntypes.Error(NodeError(f"failed to compose `{node.__name__}`", from_error=e))
 
     return fntypes.Ok(node_scope[node])

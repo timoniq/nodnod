@@ -1,11 +1,10 @@
 import asyncio
 import dataclasses
 
-from nodnod import EventLoopAgent, Node, NodeError, Scope, DataNode, polymorphic, case, scalar_node, Value
+from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, Value, case, polymorphic, scalar_node
 from nodnod.interface.either import ConcurrentEither, SequentialEither
+from nodnod.interface.polymorphic import case, polymorphic
 from nodnod.utils.prepare_values import prepare_values
-
-from nodnod.interface.polymorphic import polymorphic, case
 
 
 class Interface:
