@@ -1,8 +1,9 @@
-from nodnod.utils.resolve_signature import resolve_signature
-from nodnod.utils.misc import reverse_dict
-import fntypes
 import typing
 
+import fntypes
+
+from nodnod.utils.misc import reverse_dict
+from nodnod.utils.resolve_signature import resolve_signature
 
 if typing.TYPE_CHECKING:
     from nodnod.value import Value
@@ -18,6 +19,9 @@ class Node[T = typing.Any]:
 
     def __init_subclass__(cls, abstract: bool = False) -> None:
         from nodnod.builder.build_queue import build_queue
+        from nodnod.interface.is_node import is_node
+        from nodnod.interface.option_node import create_option_node
+        from nodnod.interface.union_node import create_union_node, is_union
 
         if not abstract:
             # Resolve dependecies via __compose__ signature
@@ -28,8 +32,14 @@ class Node[T = typing.Any]:
             injected_types = set[type]()
 
             for dep_type in signature.get_all_types():
-                if issubclass(dep_type, Node):
-                    dependency_nodes.add(dep_type)
+                dep_origin_type = typing.get_origin(dep_type) or dep_type
+
+                if is_node(dep_origin_type):
+                    dependency_nodes.add(dep_origin_type)
+                elif is_union(dep_origin_type):
+                    dependency_nodes.add(create_union_node(dep_type))
+                elif dep_origin_type is fntypes.Option:
+                    dependency_nodes.add(create_option_node(dep_type))
                 else:
                     injected_types.add(dep_type)
 
