@@ -7,12 +7,15 @@ import typing
 class Either(Node[fntypes.Variative], abstract=True):
     concurrent: bool
     __either__: tuple[type[Node], ...]
+    is_scalar: bool = False
 
     def __init__(self, value: typing.Any):
         self.value = value
     
     @classmethod
     def __compose__(cls, node: fntypes.Variative):
+        if cls.is_scalar:
+            return node.v.value
         return cls(node.v.value)
     
     @classmethod
