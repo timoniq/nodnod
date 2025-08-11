@@ -53,8 +53,6 @@ async def compose_node[T](
                 dep.unwrap()
             )
 
-    print("inj", node, node.__injections__)
-
     for injected_type in node.__injections__:
         dependencies.add(
             local_scope
