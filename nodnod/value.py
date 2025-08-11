@@ -7,7 +7,7 @@ import typing
 
 class Value[T]:
     def __init__(self, cls: type, value: T, generator: Generator[T] | None = None):
-        self.node_cls = cls
+        self.cls = cls
         self.value = value
         self.generator = generator
 
@@ -30,4 +30,4 @@ class Value[T]:
         return awaitable_noop()
     
     def __repr__(self) -> str:
-        return f"<value of {self.node_cls.__name__} = {self.value}{'' if self.generator is None else ' (open generator)'}>"
+        return f"<value of {self.cls.__name__} = {self.value}{'' if self.generator is None else ' (open generator)'}>"

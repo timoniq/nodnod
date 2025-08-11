@@ -39,7 +39,7 @@ async def dependency_sequential_either_coroutine(
        `A` already has an active future
        If future's result is composition failure
        we start pushing new dependencies one by one
-       into the concurrent pool and returning the
+       into the is_concurrent pool and returning the
        positive result if we have one
     """
 

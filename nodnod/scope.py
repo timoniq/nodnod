@@ -25,7 +25,7 @@ class Scope(OrderedDict[type, Value[typing.Any]]):
         return fntypes.Some(self[key])
     
     def push(self, value: Value[typing.Any]):
-        self[value.node_cls] = value
+        self[value.cls] = value
     
     def __repr__(self) -> str:
         return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {value!r}" for node_t, value in self.items() if value.value is not self) if self else "(empty)")

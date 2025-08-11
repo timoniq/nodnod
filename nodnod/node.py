@@ -11,11 +11,17 @@ if typing.TYPE_CHECKING:
 type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, None]
 type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
 
+@classmethod
+def dummy_compose[Cls](cls: type[Cls]) -> Cls:
+    return cls()
+
 
 class Node[T = typing.Any]:    
     __dependencies__: set[type["Node"]] = None # type: ignore
-    __injected_types__: set[type] = None # type: ignore
-    __bound_compose__: typing.Callable[[set["Value"]], ComposeResponse[T]] = None # type: ignore
+    __injections__: set[type] = None # type: ignore
+    __initialize__: typing.Callable[[set["Value"]], ComposeResponse[T]] = None # type: ignore
+    __type__: type = None  # type: ignore
+    __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
 
     def __init_subclass__(cls, abstract: bool = False) -> None:
         from nodnod.builder.build_queue import build_queue
@@ -23,7 +29,7 @@ class Node[T = typing.Any]:
         from nodnod.interface.option_node import create_option_node
         from nodnod.interface.union_node import create_union_node, is_union
 
-        if not abstract:
+        if not abstract and not cls.__initialize__:
             # Resolve dependecies via __compose__ signature
             signature = resolve_signature(cls.__compose__, ignore_bound_parameters=True)
 
@@ -46,33 +52,35 @@ class Node[T = typing.Any]:
             if cls.__dependencies__ is None:
                 cls.__dependencies__ = dependency_nodes
 
-            if cls.__injected_types__ is None:
-                cls.__injected_types__ = injected_types
+            if cls.__injections__ is None:
+                cls.__injections__ = injected_types
 
-            if cls.__bound_compose__ is None:
+            if cls.__initialize__ is None:
                 # If not set, prepare the dependencies distribution
                 kwargs_names_by_type = reverse_dict(signature.kwargs | signature.args)
 
-                cls.__bound_compose__ = (
+                cls.__initialize__ = (
                     fntypes.F[set["Value"]]()
                     .then(
                         lambda values: (
-                            [],
-                            {kwargs_names_by_type[value.node_cls]: value.__unbox__() for value in values if value.node_cls in kwargs_names_by_type}
+                            print(values) or [],
+                            {kwargs_names_by_type[value.cls]: value.__unbox__() for value in values if value.cls in kwargs_names_by_type}
                         )
                     ).then(
                         lambda params: cls.__compose__(*params[0], **params[1])
                     )
                 )
             
+            if cls.__type__ is None:
+                cls.__type__ = cls
+            
             setattr(cls, "__traverse__", build_queue(cls, []))
-    
-    @classmethod
-    def __compose__(cls, *args, **kwargs) -> ComposeResponse[T]:
-        ...
     
     def __repr__(self) -> str:
         return f"<node {self.__class__.__name__}>"
 
 
 type Queue = list[type[Node]]
+
+
+__all__ = ("Node", "Queue")

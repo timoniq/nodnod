@@ -30,7 +30,7 @@ def collect_cases(node_class: type[typing.Any]) -> list[typing.Callable[..., Com
 
 class PolymorphicNode[T](Either, abstract=True):
     __either__: tuple[type[T], ...]
-    concurrent = False
+    is_concurrent = False
     is_scalar = False
 
     @classmethod

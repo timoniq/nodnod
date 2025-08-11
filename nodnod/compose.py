@@ -9,22 +9,22 @@ import types
 import fntypes
 
 
-async def initialize_node[T](node_cls: type[Node], value: ComposeResponse[T]) -> Value[T]:
+async def initialize_node[T](cls: type[Node], value: ComposeResponse[T]) -> Value[T]:
     if inspect.isawaitable(value):
         value = typing.cast(T, await value)
     
     if isinstance(value, types.GeneratorType):
         generator = typing.cast(typing.Generator[T, None, None], value)
         value = generator_send(generator).expect("Generator did not generate any value")
-        return Value(node_cls, value, generator=generator)
+        return Value(cls, value, generator=generator)
     
     if isinstance(value, types.AsyncGeneratorType):
         generator = typing.cast(typing.AsyncGenerator[T, None], value)
         value = (await generator_asend(generator)).expect("Generator did not generate any value")
-        return Value(node_cls, value, generator=generator)
+        return Value(cls, value, generator=generator)
     
     # value is T
-    return Value(node_cls, value)  # type: ignore
+    return Value(cls, value)  # type: ignore
 
 
 async def compose_node[T](
@@ -53,7 +53,9 @@ async def compose_node[T](
                 dep.unwrap()
             )
 
-    for injected_type in node.__injected_types__:
+    print("inj", node, node.__injections__)
+
+    for injected_type in node.__injections__:
         dependencies.add(
             local_scope
             .retrieve(injected_type)
@@ -61,8 +63,8 @@ async def compose_node[T](
         )
     
     try:
-        value = node.__bound_compose__(dependencies)
-        node_scope[node] = await initialize_node(getattr(node, "__cls__", node), value)
+        value = node.__initialize__(dependencies)
+        node_scope[node] = await initialize_node(node.__type__, value)
     except NodeError as e:
         return fntypes.Error(NodeError(f"failed to compose `{node.__name__}`", from_error=e))
 

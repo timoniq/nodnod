@@ -72,7 +72,7 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
         namespace=dict(
             is_scalar=True,
             __injected_types__=injected_types,  # FIXME: need refactoring
-            __cls__=union,  # FIXME: need refactoring
+            __type__=union,
             __either__=tuple(either) + ((get_none_node(),) if is_optional else ()),
             __module__=__name__,
         ),

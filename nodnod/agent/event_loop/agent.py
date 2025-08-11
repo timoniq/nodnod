@@ -35,7 +35,7 @@ class EventLoopAgent(Agent):
 
             if issubclass(node, Either):
 
-                if node.concurrent:
+                if node.is_concurrent:
                 
                     dependencies = [
                         futures[dependency] for dependency in node.__dependencies__

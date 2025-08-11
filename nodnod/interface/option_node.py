@@ -67,7 +67,7 @@ def create_option_node(option: type[Option[typing.Any]], /) -> type[Node]:
         bases=tuple(),
         namespace=dict(
             is_scalar=True,
-            __cls__=option,
+            __type__=option,
             __either__=(some_node, get_nothing_node()),
             __module__=__name__,
         ),
