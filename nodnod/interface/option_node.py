@@ -12,27 +12,22 @@ from nodnod.utils.create_node import create_node
 if typing.TYPE_CHECKING:
     from nodnod.node import Node
 
-NOTHING_NODE: type[Node] | None = None
 NOTHING: typing.Final = Nothing()
 
 
+@cache
 def get_nothing_node() -> type[Node]:
     from nodnod.node import Node
 
-    global NOTHING_NODE
-
-    if NOTHING_NODE is None:
-        NOTHING_NODE = create_node(
-            name="NothingNode",
-            base_node=Node,
-            bases=tuple(),
-            namespace=dict(
-                __dependencies__=set(),
-                __compose__=lambda: NOTHING,
-            ),
-        )
-
-    return NOTHING_NODE
+    return create_node(
+        name="NothingNode",
+        base_node=Node,
+        bases=tuple(),
+        namespace=dict(
+            __dependencies__=set(),
+            __compose__=lambda: NOTHING,
+        ),
+    )
 
 
 @cache
@@ -47,22 +42,22 @@ def create_option_node(option: type[Option[typing.Any]], /) -> type[Node]:
     arg_type = args[0]
 
     if is_node(typing.get_origin(arg_type) or arg_type):
-        namespace = dict(__injected_types__=set(), __dependencies__={arg_type})
+        namespace = dict(__injections__=set(), __dependencies__={arg_type})
     else:
-        namespace = dict(__injected_types__={arg_type}, __dependencies__=set())
+        namespace = dict(__injections__={arg_type}, __dependencies__=set())
 
     some_node = create_node(
-        name="SomeNode",
+        name=f"SomeNode[{arg_type.__name__}]",
         base_node=Node,
         bases=tuple(),
         namespace=dict(
-            __bound_compose__=lambda values: Some(tuple(values)[0].value),
+            __initialize__=lambda values: Some(tuple(values)[0].value),
             __module__=__name__,
             **namespace,
         ),
     )
     return create_node(
-        name="OptionNode",
+        name=f"OptionNode[{arg_type.__name__}]",
         base_node=SequentialEither,
         bases=tuple(),
         namespace=dict(
