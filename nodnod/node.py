@@ -28,6 +28,7 @@ class Node[T = typing.Any]:
         from nodnod.interface.is_node import is_node
         from nodnod.interface.option_node import create_option_node
         from nodnod.interface.union_node import create_union_node, is_union
+        from nodnod.interface.create_result_node import create_result_node
 
         if not abstract and not cls.__initialize__:
             # Resolve dependecies via __compose__ signature
@@ -46,6 +47,8 @@ class Node[T = typing.Any]:
                     dependency_nodes.add(create_union_node(dep_type))
                 elif dep_origin_type is fntypes.Option:
                     dependency_nodes.add(create_option_node(dep_type))
+                elif dep_origin_type is fntypes.Result:
+                    dependency_nodes.add(create_result_node(dep_type))
                 else:
                     injected_types.add(dep_type)
 
@@ -63,7 +66,7 @@ class Node[T = typing.Any]:
                     fntypes.F[set["Value"]]()
                     .then(
                         lambda values: (
-                            [],
+                            print(values) or [],
                             {kwargs_names_by_type[value.cls]: value.__unbox__() for value in values if value.cls in kwargs_names_by_type}
                         )
                     ).then(

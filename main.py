@@ -1,8 +1,10 @@
 import asyncio
 import dataclasses
+import fntypes
 
 from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, Value, case, polymorphic, scalar_node
 from nodnod.interface.either import ConcurrentEither, SequentialEither
+from nodnod.interface.result_node import ResultNode
 from nodnod.interface.polymorphic import case, polymorphic
 from nodnod.utils.prepare_values import prepare_values
 
@@ -22,6 +24,12 @@ class A:
     @classmethod
     async def __compose__(cls):
         yield int(11)
+
+@scalar_node
+class Bitchnode:
+    @classmethod
+    async def __compose__(cls):
+        raise RuntimeError("dang")
 
 
 @scalar_node
@@ -68,16 +76,28 @@ class Lol:
         return i.get_lol()
 
 
+class MyNode(Node):
+    def __init__(self):
+        self.bro = 3
+
+
 @scalar_node
 class LOL:
     @classmethod
-    def __compose__(cls, x: Lol, mi: MyInt) -> str:
-        print(x, mi)
-        return x.upper() * mi
+    def __compose__(
+        cls, 
+        x: Lol, 
+        mi: MyInt, 
+        opt: fntypes.Option[A], 
+        mn: MyNode, 
+        AR: fntypes.Result[Bitchnode, RuntimeError],
+) -> str:
+        print("myn=", AR)
+        return x.upper() * mi + "d" * mn.bro
 
 
 async def main():
-    agent = EventLoopAgent.build({LOL, C})
+    agent = EventLoopAgent.build({LOL, C, MyNode})
 
     global_scope = Scope(detail="global")
     global_scope.push(Value(Interface, MyInterface()))

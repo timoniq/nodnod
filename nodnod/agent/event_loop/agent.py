@@ -2,7 +2,8 @@ from nodnod.agent.base import Agent
 from nodnod.node import Node, Queue
 from nodnod.scope import Scope
 from nodnod.interface.either import Either
-from nodnod.agent.event_loop.coroutine import compose_coroutine, dependency_sequential_either_coroutine, dependency_concurrent_either_corountine
+from nodnod.interface.result_node import ResultNode
+from nodnod.agent.event_loop.coroutine import compose_coroutine, dependency_sequential_either_coroutine, dependency_concurrent_either_corountine, result_node_compose_coroutine
 from nodnod.builder.build_queue import traverse_all
 import asyncio
 import typing
@@ -81,6 +82,15 @@ class EventLoopAgent(Agent):
                     )
                 )
 
+            elif issubclass(node, ResultNode):
+                task = asyncio.Task(
+                    result_node_compose_coroutine(
+                        node,
+                        mapped_scopes.get(node, local_scope),
+                        futures[node.__from_node__],
+                    )
+                )
+            
             else:
 
                 dependencies = [

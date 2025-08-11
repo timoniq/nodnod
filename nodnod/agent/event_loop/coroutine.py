@@ -6,6 +6,7 @@ from nodnod.scope import Scope
 import fntypes
 from nodnod.value import Value
 from nodnod.error import NodeError
+from nodnod.interface.result_node import ResultNode
 
 type DependencyFuture[T] = asyncio.Future[fntypes.Result[Value[T], NodeError]]
 type Pusher = typing.Callable[[dict[type[Node], asyncio.Future], type[Node]], None]
@@ -22,6 +23,30 @@ async def compose_coroutine(
             return fntypes.Error(NodeError(f"could not resolve dependencies of {node.__name__}", from_error=result.error))
 
     return await compose_node(node, node_scope, local_scope)
+
+
+async def result_node_compose_coroutine(
+    node: type[ResultNode],
+    node_scope: Scope,
+    from_node: DependencyFuture,
+) -> fntypes.Result[Value[typing.Any], NodeError]:
+    result = (await asyncio.gather(from_node, return_exceptions=True))[0]
+    print(result)
+    if isinstance(result, BaseException):
+        if not node.__compose__(result):
+            raise result
+        value = Value(node.__type__, fntypes.Error(result))
+    elif fntypes.is_err(result):
+        if not node.__compose__(result.error):
+            raise result.error
+        value = Value(node.__type__, result)
+    else:
+        value = Value(node.__type__, fntypes.Ok(result.value.value))
+
+    node_scope[node] = value
+    return fntypes.Ok(value)
+    
+
 
 
 async def dependency_sequential_either_coroutine(
