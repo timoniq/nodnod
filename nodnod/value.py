@@ -30,4 +30,4 @@ class Value[T]:
         return awaitable_noop()
     
     def __repr__(self) -> str:
-        return f"<value of {self.cls.__name__} = {self.value}{'' if self.generator is None else ' (open generator)'}>"
+        return f"<value of {getattr(self.cls, '__name__', self.cls)} = {self.value}{'' if self.generator is None else ' (open generator)'}>"

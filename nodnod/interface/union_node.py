@@ -13,7 +13,6 @@ from nodnod.utils.create_node import create_node
 if typing.TYPE_CHECKING:
     from nodnod.node import Node
 
-NONE_NODE: type[Node] | None = None
 NONE_TYPES: typing.Final = frozenset({None, type(None)})
 UNION_TYPES: typing.Final = frozenset((typing.Union, types.UnionType))
 
@@ -22,20 +21,15 @@ def is_union(obj: typing.Any, /) -> typing.TypeIs[types.UnionType]:
     return obj in UNION_TYPES
 
 
+@cache
 def get_none_node() -> type[Node]:
     from nodnod.node import Node
-    
-    global NONE_NODE
-    
-    if NONE_NODE is None:
-        NONE_NODE = create_node(
-            name="NoneNode",
-            base_node=Node,
-            bases=tuple(),
-            namespace=dict(__dependencies__=set()),
-        )
-
-    return NONE_NODE
+    return create_node(
+        name="NoneNode",
+        base_node=Node,
+        bases=tuple(),
+        namespace=dict(__dependencies__=set()),
+    )
 
 
 @cache
@@ -52,7 +46,7 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
     injected_types = set()
 
     for arg in args:
-        if arg in UNION_TYPES:
+        if arg in NONE_TYPES:
             is_optional = True
             continue
         
@@ -66,12 +60,12 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
             injected_types.add(arg)
 
     return create_node(
-        name="UnionNode",
+        name="UnionNode[{}]".format(", ".join(str(arg) for arg in args)),
         base_node=SequentialEither,
         bases=tuple(),
         namespace=dict(
             is_scalar=True,
-            __injected_types__=injected_types,  # FIXME: need refactoring
+            __injections__=injected_types,
             __type__=union,
             __either__=tuple(either) + ((get_none_node(),) if is_optional else ()),
             __module__=__name__,
