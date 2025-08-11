@@ -31,7 +31,7 @@ async def result_node_compose_coroutine(
     from_node: DependencyFuture,
 ) -> fntypes.Result[Value[typing.Any], NodeError]:
     result = (await asyncio.gather(from_node, return_exceptions=True))[0]
-    print(result)
+
     if isinstance(result, BaseException):
         if not node.__compose__(result):
             raise result

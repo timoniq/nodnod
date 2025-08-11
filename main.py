@@ -29,7 +29,7 @@ class A:
 class Bitchnode:
     @classmethod
     async def __compose__(cls):
-        raise RuntimeError("dang")
+        raise NodeError("dang")
 
 
 @scalar_node
@@ -90,7 +90,7 @@ class LOL:
         mi: MyInt, 
         opt: fntypes.Option[A], 
         mn: MyNode, 
-        AR: fntypes.Result[Bitchnode, RuntimeError],
+        AR: fntypes.Result[Bitchnode, Exception],
 ) -> str:
         print("myn=", AR)
         return x.upper() * mi + "d" * mn.bro

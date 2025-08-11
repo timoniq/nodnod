@@ -66,7 +66,7 @@ class Node[T = typing.Any]:
                     fntypes.F[set["Value"]]()
                     .then(
                         lambda values: (
-                            print(values) or [],
+                            [],
                             {kwargs_names_by_type[value.cls]: value.__unbox__() for value in values if value.cls in kwargs_names_by_type}
                         )
                     ).then(
