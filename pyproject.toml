@@ -9,12 +9,17 @@ description = "Programming in Python empowered with Nodes DI, implements efficie
 authors = [{ name = "timoniq" }]
 requires-python = ">=3.13,<4.0"
 readme = "readme.md"
-dependencies = ["fntypes"]
+dependencies = [
+    "fntypes",
+]
 
 [dependency-groups]
 dev = [
     "ruff>=0.12.5,<1",
     "basedpyright>=1.31.0,<2",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-cov>=6.2.1",
 ]
 
 [tool.uv]

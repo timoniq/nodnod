@@ -1,0 +1,38 @@
+import pytest
+import fntypes
+from nodnod import scalar_node, Node
+from nodnod.interface.option_node import create_option_node
+from nodnod.error import NodeBuildError
+
+
+class TestOptionNodeExtended:
+    def test_create_option_node_no_args(self):
+        # Create an Option with no type args to test error case
+        with pytest.raises(NodeBuildError, match="Option must have exactly one type argument"):
+            # This would be an invalid Option type, but we simulate it
+            empty_option = fntypes.Option  # Raw Option without type argument
+            create_option_node(empty_option)
+    
+    def test_create_option_node_with_non_node_type(self):
+        # Option with non-node type (should be injected)
+        option_type = fntypes.Option[int]
+        option_node = create_option_node(option_type)
+        
+        some_node = option_node.__either__[0]
+        assert issubclass(option_node, Node)
+        assert some_node.__injections__ == {int}
+        assert some_node.__dependencies__ == set()
+    
+    def test_create_option_node_with_node_type(self):
+        @scalar_node
+        class TestNode:
+            @classmethod
+            def __compose__(cls) -> int:
+                return 42
+        
+        option_type = fntypes.Option[TestNode]
+        option_node = create_option_node(option_type)
+        
+        assert issubclass(option_node, Node)
+        assert list(option_node.__dependencies__)[0].__dependencies__.pop() is TestNode
+        assert option_node.__injections__ == set()
