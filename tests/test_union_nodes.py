@@ -9,7 +9,7 @@ from nodnod.interface.union_node import create_union_node, is_union
 class TestUnionNodes:
     def test_is_union_true(self):
         union_type = typing.Union[int, str]
-        assert is_union(typing.get_origin(union_type))
+        assert is_union(union_type)
     
     def test_is_union_false(self):
         assert not is_union(int)

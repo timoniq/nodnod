@@ -12,7 +12,7 @@ class TestValue:
     
     def test_value_unbox(self):
         value = Value(str, "hello")
-        unboxed = value.__unbox__()
+        unboxed = value.unbox()
         assert unboxed == "hello"
     
     def test_value_close_no_generator(self):

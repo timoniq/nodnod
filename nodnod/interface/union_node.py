@@ -18,7 +18,7 @@ UNION_TYPES: typing.Final = frozenset((typing.Union, types.UnionType))
 
 
 def is_union(obj: typing.Any, /) -> typing.TypeIs[types.UnionType]:
-    return obj in UNION_TYPES
+    return typing.get_origin(obj) in UNION_TYPES
 
 
 @cache
