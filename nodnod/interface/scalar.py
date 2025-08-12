@@ -1,56 +1,55 @@
-from __future__ import annotations
-
-import inspect
 import typing
+import inspect
 
-from nodnod.error import NodeBuildError
-from nodnod.utils.create_node import create_node_from_composable, create_node_from_compose_function
+from nodnod.node import Node
+from nodnod.utils.create_node import create_node
 
-if typing.TYPE_CHECKING:
-    import types
-
-    from nodnod.interface.composable import Composable
-    from nodnod.node import Generator
-
-    class NodeComposeFunction[R](typing.Protocol):
-        __name__: str
-        __code__: types.CodeType
-
-        def __call__(self, *args: typing.Any, **kwargs: typing.Any) -> R: ...
+type Generator[T] = typing.Generator[T, typing.Any, typing.Any] | typing.AsyncGenerator[T, typing.Any]
 
 
-SCALAR_MARK: typing.Final = "is_scalar"
-
-
-def is_scalar(obj: typing.Any, /) -> bool:
-    return getattr(obj, SCALAR_MARK, False) is True
+class Composable[T](typing.Protocol):
+    @classmethod
+    def __compose__(cls, *args: typing.Any, **kwargs: typing.Any) -> T:
+        ...
 
 
 class scalar_node[T]:  # noqa: N801
     @typing.overload
-    def __new__(cls, x: NodeComposeFunction[Composable[typing.Awaitable[T]]], /) -> type[T]: ...
+    def __new__(cls, x: Composable[typing.Awaitable[T]], /) -> type[T]: ...
 
     @typing.overload
-    def __new__(cls, x: NodeComposeFunction[Composable[Generator[T]]], /) -> type[T]: ...
+    def __new__(cls, x: Composable[Generator[T]], /) -> type[T]: ...
 
     @typing.overload
-    def __new__(cls, x: NodeComposeFunction[Composable[T]], /) -> type[T]: ...
+    def __new__(cls, x: Composable[T], /) -> type[T]: ...
 
     @typing.overload
-    def __new__(cls, x: NodeComposeFunction[T], /) -> type[T]: ...
+    def __new__(cls, x: typing.Callable[..., typing.Awaitable[T]], /) -> type[T]: ...
 
-    def __new__(cls, x: typing.Any, /) -> type[typing.Any]:
-        if inspect.isfunction(x):
-            node_class = create_node_from_compose_function(x)
-        elif hasattr(x, "__compose__"):
-            node_class = create_node_from_composable(x)
-        else:
-            raise NodeBuildError(
-                f"Cannot create scalar node from `{x!r}`, only functions and composable classes are supported.",
+    @typing.overload
+    def __new__(cls, x: typing.Callable[..., Generator[T]], /) -> type[T]: ...
+
+    @typing.overload
+    def __new__(cls, x: typing.Callable[..., T], /) -> type[T]: ...
+
+    @typing.overload
+    def __new__(cls, x: T, /) -> type[T]: ...
+
+    def __new__(cls, node_class: typing.Any, /) -> typing.Any:
+
+        if inspect.isfunction(node_class):
+            node_class = type(node_class.__name__, (), dict(__compose__=node_class))
+
+        if not any(issubclass(base, Node) for base in node_class.__bases__):
+            return create_node(
+                name=node_class.__name__,
+                base_node=Node,
+                bases=(node_class,),
+                namespace=dict(is_scalar=True, __module__=node_class.__module__),
             )
 
-        setattr(node_class, SCALAR_MARK, True)
+        node_class.is_scalar = True
         return node_class
 
 
-__all__ = ("scalar_node", "is_scalar")
+__all__ = ("scalar_node",)

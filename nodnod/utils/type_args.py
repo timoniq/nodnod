@@ -7,16 +7,9 @@ type TypeParameter = typing.TypeVar | typing.TypeVarTuple | typing.ParamSpec
 type TypeParameters = tuple[TypeParameter, ...]
 
 
-def get_type_args(annotation: typing.Any, /) -> fntypes.Option[tuple[typing.Any, ...]]:
-    type_args = typing.get_args(annotation)
-    if not type_args:
-        return fntypes.Nothing()
-    return fntypes.Some(type_args)
-
-
-def get_type_parameters(obj: typing.Any, /) -> dict[TypeParameter, AnnotationForm]:
+def get_type_args(obj: typing.Any, /) -> dict[TypeParameter, AnnotationForm]:
     origin_obj = typing.get_origin(obj)
-    args = get_type_args(obj).unwrap()
+    args = typing.get_args(obj)
     parameters: TypeParameters = getattr(origin_obj or obj, "__parameters__")
 
     if not parameters:
@@ -37,6 +30,10 @@ def get_type_parameters(obj: typing.Any, /) -> dict[TypeParameter, AnnotationFor
         index += 1
 
     return generic_alias_args
+
+
+def get_type_parameters(obj: typing.Any) -> TypeParameters:
+    return getattr(obj, "__parameters__", ())
 
 
 __all__ = ("get_type_args", "get_type_parameters")

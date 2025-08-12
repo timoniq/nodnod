@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
 type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, None]
 type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
 
-TYPEVARS_TYPES: typing.Final = frozenset((typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple))
+TYPEVARS_TYPES: typing.Final = (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)
 
 
 @classmethod
@@ -31,9 +31,9 @@ class Node[T = typing.Any]:
     def __init_subclass__(cls, abstract: bool = False) -> None:
         from nodnod.builder.build_queue import build_queue
         from nodnod.interface.create_result_node import create_result_node
-        from nodnod.interface.generic import is_generic_node
         from nodnod.interface.option_node import create_option_node
         from nodnod.interface.union_node import create_union_node, is_union
+        from nodnod.interface.generic import create_type_arg_node
         from nodnod.utils.create_node import create_node
 
         if not abstract and not cls.__initialize__:
@@ -53,17 +53,13 @@ class Node[T = typing.Any]:
                     dependency_nodes.add(create_option_node(dep_type))
                 elif is_type(dep_type, fntypes.Result):
                     dependency_nodes.add(create_result_node(dep_type))
-                elif is_type(dep_type, type) and is_type(type_arg := get_type_args(dep_type).unwrap()[0], TYPEVARS_TYPES):
-                    type_arg_node = create_node(
-                        name=f"TypeArgNode:{type_arg.__name__}",
-                        base_node=Node,
-                        bases=(),
-                        namespace=dict(
-                            __type__=dep_type,
-                            __initialize__=lambda values: get_type_parameters(cls)[type_arg]
-                        )
-                    )
-                    dependency_nodes.add(type_arg_node)
+                elif is_type(dep_type, type):
+                    type_arg = get_type_parameters(cls)[0]
+
+                    if is_type(type(type_arg), TYPEVARS_TYPES):
+
+                        type_arg_node = create_type_arg_node(cls, type_arg, dep_type)
+                        dependency_nodes.add(type_arg_node)
                 else:
                     injected_types.add(dep_type)
 
