@@ -6,12 +6,12 @@ import typing
 
 
 class Value[T]:
-    def __init__(self, cls: type, value: T, generator: Generator[T] | None = None):
+    def __init__(self, cls: type[typing.Any], value: T, generator: Generator[T] | None = None):
         self.cls = cls
         self.value = value
         self.generator = generator
 
-    def __unbox__(self) -> T:
+    def unbox(self) -> T:
         return self.value
     
     def close(self) -> typing.Awaitable[typing.Any]:

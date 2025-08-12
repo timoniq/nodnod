@@ -1,12 +1,21 @@
 import asyncio
 import dataclasses
+
 import fntypes
 
 from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, Value, case, polymorphic, scalar_node
 from nodnod.interface.either import ConcurrentEither, SequentialEither
-from nodnod.interface.result_node import ResultNode
+from nodnod.interface.generic import generic_node
 from nodnod.interface.polymorphic import case, polymorphic
+from nodnod.interface.result_node import ResultNode
 from nodnod.utils.prepare_values import prepare_values
+
+
+@generic_node
+class Lolik[T]:
+    @classmethod
+    async def __compose__(cls, x: type[T]):
+        return x("11")
 
 
 class Interface:
@@ -97,7 +106,7 @@ class LOL:
 
 
 async def main():
-    agent = EventLoopAgent.build({LOL, C, MyNode})
+    agent = EventLoopAgent.build({LOL, C, MyNode, Lolik[int], Lolik[str], Lolik[float]})
 
     global_scope = Scope(detail="global")
     global_scope.push(Value(Interface, MyInterface()))

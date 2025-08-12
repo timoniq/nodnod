@@ -10,7 +10,7 @@ def prepare_values(values: dict[typing.Any, "Value[typing.Any]"]) -> dict[str, t
     prepared_values = {}
 
     for key, value in values.items():
-        prepared_values[key] = value.__unbox__()
+        prepared_values[key] = value.unbox()
 
     return prepared_values
 
