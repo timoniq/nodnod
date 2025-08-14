@@ -22,14 +22,20 @@ def prepare_generic_node(
 
     if type_args in generic_nodes:
         return generic_nodes[type_args]
-
+    
     type_arg_dict = get_type_args_values(type_args, composable.__type_params__)
     generic_node = create_node(
         f"{composable.__name__}[{', '.join(type_arg.__name__ for type_arg in type_args)}]",
         base_node=Node,
-        bases=(),
-        namespace=dict(__type_args__=type_arg_dict),
+        bases=(composable,),
+        namespace=dict(
+            __type_args__=type_arg_dict,
+            __initialize__=None,
+            __dependencies__=None,
+        ),
     )
+    generic_node.__type__ = generic_node
+    generic_node.__init_subclass__()
 
     generic_nodes[type_args] = generic_node
     setattr(composable, "__generics__", generic_nodes)
