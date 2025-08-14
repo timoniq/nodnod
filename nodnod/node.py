@@ -1,6 +1,7 @@
 import typing
 
 import fntypes
+import collections
 
 from nodnod.error import NodeBuildError
 from nodnod.utils.is_type import is_type
@@ -20,6 +21,9 @@ def dummy_compose[Cls](cls: type[Cls]) -> Cls:
     return cls()
 
 
+FORWARD_REF_REQUESTS = collections.defaultdict(list["type[Node]"])
+INITIALIZED_FORWARD_REFS = {}
+
 class Node[T = typing.Any]:    
     __dependencies__: set[type["Node"]] = None # type: ignore
     __injections__: set[type[typing.Any]] = None # type: ignore
@@ -27,7 +31,10 @@ class Node[T = typing.Any]:
     __type__: type[typing.Any] = None  # type: ignore
     __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
 
-    def __init_subclass__(cls, abstract: bool = False) -> None:
+    def __init_subclass__(
+        cls, 
+        abstract: bool = False,
+    ) -> None:
         from nodnod.builder.build_queue import build_queue
         from nodnod.interface.create_result_node import create_result_node
         from nodnod.interface.generic import create_type_arg_node
@@ -37,12 +44,25 @@ class Node[T = typing.Any]:
         if not abstract and not cls.__initialize__:
             # Resolve dependecies via __compose__ signature
             signature = resolve_signature(cls.__compose__, ignore_bound_parameters=True)
+            all_args = signature.args | signature.kwargs
+
+            # Search for forward refs and form requests to initialize node when forward ref node is initialized
+            # or fill forward refs if node is being initialized
+            for name, dep_type in all_args.items():
+                if isinstance(dep_type, typing.ForwardRef):
+                    if (ref := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
+                        all_args[name] = ref
+                        continue
+                    FORWARD_REF_REQUESTS[dep_type.__forward_arg__].append(cls)
+                    return
+                
+            all_args = typing.cast(dict[str, type], all_args)
 
             # Dependencies are all types from __compose__ signature
             dependency_nodes = set[type[Node]]()
             injected_types = set[type]()
 
-            for dep_type in signature.get_all_types():
+            for dep_type in all_args.values():
                 if is_type(dep_type, Node):
                     dependency_nodes.add(dep_type)
                 elif is_union(dep_type):
@@ -73,7 +93,7 @@ class Node[T = typing.Any]:
 
             if cls.__initialize__ is None:
                 # If not set, prepare the dependencies distribution
-                kwargs_names_by_type = reverse_dict(signature.kwargs | signature.args)
+                kwargs_names_by_type = reverse_dict(all_args)
 
                 cls.__initialize__ = (
                     fntypes.F[set["Value[typing.Any]"]]()
@@ -94,6 +114,11 @@ class Node[T = typing.Any]:
                 cls.__type__ = cls
 
             setattr(cls, "__traverse__", build_queue(cls, []))
+
+            # Initialize nodes that requested node as forward ref
+            for request in FORWARD_REF_REQUESTS.pop(cls.__name__, []):
+                INITIALIZED_FORWARD_REFS[cls.__name__] = cls
+                request.__init_subclass__()
     
     def __repr__(self) -> str:
         return f"<node {type(self).__name__}>"

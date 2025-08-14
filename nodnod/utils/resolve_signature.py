@@ -5,11 +5,11 @@ import inspect
 
 @dataclasses.dataclass
 class Signature:
-    args: dict[str, type[typing.Any]]
-    kwargs: dict[str, type[typing.Any]]
+    args: dict[str, type[typing.Any] | typing.ForwardRef]
+    kwargs: dict[str, type[typing.Any] | typing.ForwardRef]
 
-    def get_all_types(self) -> set[type[typing.Any]]:
-        types = set[type[typing.Any]]()
+    def get_all_types(self) -> set[type[typing.Any] | typing.ForwardRef]:
+        types = set[type[typing.Any] | typing.ForwardRef]()
         for t in self.args.values():
             types.add(t)
         for t in self.kwargs.values():
@@ -26,15 +26,19 @@ def resolve_signature(callable: typing.Callable[..., typing.Any], ignore_bound_p
         callable = callable.__func__
 
     sig = inspect.signature(callable)
-    hints = typing.get_type_hints(callable)
-    args: dict[str, type] = {}
-    kwargs: dict[str, type] = {}
+    hints = callable.__annotations__
+    args = {}
+    kwargs = {}
 
     for name, param in sig.parameters.items():
         if ignore_bound_parameters and name in {"cls", "self"}:
             continue
 
         typ = hints.get(name, typing.Any)
+
+        if isinstance(typ, str):
+            typ = typing.ForwardRef(typ)
+
         if param.default is param.empty and param.kind in (
             param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD
         ):
