@@ -80,6 +80,9 @@ class Scope(OrderedDict[type, Value[typing.Any]]):
             scope.update(part)
             part = part.prev
         return scope
+    
+    def inject(self, t: type[typing.Any], value: typing.Any) -> None:
+        self[t] = Value(t, value)
 
 
 def validate_local_scope_is_linked_to_node_scopes(local_scope: Scope, node_scopes: dict[type[Node], Scope]):
