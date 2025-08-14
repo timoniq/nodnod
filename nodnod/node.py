@@ -2,18 +2,17 @@ import typing
 
 import fntypes
 
+from nodnod.error import NodeBuildError
 from nodnod.utils.is_type import is_type
 from nodnod.utils.misc import reverse_dict
 from nodnod.utils.resolve_signature import resolve_signature
-from nodnod.utils.type_args import get_type_args, get_type_parameters
 
 if typing.TYPE_CHECKING:
     from nodnod.value import Value
 
 type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, None]
 type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
-
-TYPEVARS_TYPES: typing.Final = (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)
+type Queue = list[type[Node]]
 
 
 @classmethod
@@ -31,10 +30,9 @@ class Node[T = typing.Any]:
     def __init_subclass__(cls, abstract: bool = False) -> None:
         from nodnod.builder.build_queue import build_queue
         from nodnod.interface.create_result_node import create_result_node
+        from nodnod.interface.generic import create_type_arg_node
         from nodnod.interface.option_node import create_option_node
         from nodnod.interface.union_node import create_union_node, is_union
-        from nodnod.interface.generic import create_type_arg_node
-        from nodnod.utils.create_node import create_node
 
         if not abstract and not cls.__initialize__:
             # Resolve dependecies via __compose__ signature
@@ -54,12 +52,16 @@ class Node[T = typing.Any]:
                 elif is_type(dep_type, fntypes.Result):
                     dependency_nodes.add(create_result_node(dep_type))
                 elif is_type(dep_type, type):
-                    type_arg = get_type_parameters(cls)[0]
+                    args = typing.get_args(dep_type)
+                    if not args:
+                        raise NodeBuildError(f"Expected `type` with type argument, got `{dep_type!r}`.")
+                    
+                    if is_type(type(args[0]), typing.TypeVar):
+                        type_arg_node = create_type_arg_node(cls, args[0], dep_type)
+                    else:
+                        raise NotImplementedError("Only type with type var is supported.")
 
-                    if is_type(type(type_arg), TYPEVARS_TYPES):
-
-                        type_arg_node = create_type_arg_node(cls, type_arg, dep_type)
-                        dependency_nodes.add(type_arg_node)
+                    dependency_nodes.add(type_arg_node)
                 else:
                     injected_types.add(dep_type)
 
@@ -82,9 +84,9 @@ class Node[T = typing.Any]:
                                 for value in values 
                                 if value.cls in kwargs_names_by_type
                             }
-                        )
+                        ),
                     ).then(
-                        lambda params: cls.__compose__(**params)
+                        lambda params: cls.__compose__(**params),
                     )
                 )
             
@@ -94,10 +96,7 @@ class Node[T = typing.Any]:
             setattr(cls, "__traverse__", build_queue(cls, []))
     
     def __repr__(self) -> str:
-        return f"<node {self.__class__.__name__}>"
-
-
-type Queue = list[type[Node]]
+        return f"<node {type(self).__name__}>"
 
 
 __all__ = ("Node", "Queue")
