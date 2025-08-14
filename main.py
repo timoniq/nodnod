@@ -1,5 +1,6 @@
 import asyncio
 import dataclasses
+import typing
 
 import fntypes
 
@@ -12,10 +13,18 @@ from nodnod.utils.prepare_values import prepare_values
 
 
 @generic_node
-class Lolik[T]:
+#@dataclasses.dataclass
+class Lolik[T: (str, int), *Ts, X: str | int](DataNode, abstract=True):
+    def __init__(self, t: T, x: X):
+        self.t = t
+        self.x = x
+
     @classmethod
-    async def __compose__(cls, x: type[T]):
-        return x("11")
+    async def __compose__(cls, t: type[T], y: type[X]) -> typing.Self:
+        return cls(t("11"), y("22"))
+
+
+print(Lolik.__dict__)
 
 
 class Interface:
@@ -75,7 +84,6 @@ class C(DataNode):
         print("calculating c")
         print(aorb.value)
         return cls(1.2, aorb.value / 2)
-        print("close c")
 
 
 @scalar_node
@@ -99,14 +107,13 @@ class LOL:
         mi: MyInt, 
         opt: fntypes.Option[A], 
         mn: MyNode, 
-        AR: fntypes.Result[Bitchnode, Exception],
-) -> str:
-        print("myn=", AR)
+        ar: fntypes.Result[Bitchnode, Exception],
+    ) -> str:
         return x.upper() * mi + "d" * mn.bro
 
 
 async def main():
-    agent = EventLoopAgent.build({LOL, C, MyNode, Lolik[int], Lolik[str], Lolik[float]})
+    agent = EventLoopAgent.build({LOL, C, MyNode, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
 
     global_scope = Scope(detail="global")
     global_scope.push(Value(Interface, MyInterface()))
@@ -117,14 +124,6 @@ async def main():
             mapped_scopes={A: global_scope},
         )
         print(prepare_values(scope.merge()))
-
-    # async with global_scope.create_child("local2") as scope:
-    #     await agent.run(
-    #         local_scope=scope, 
-    #         mapped_scopes={A: global_scope},
-    #     )
-    #     print(global_scope)
-    #     print(scope)
 
     await global_scope.close()
 
