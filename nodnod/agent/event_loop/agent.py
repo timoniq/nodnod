@@ -1,6 +1,6 @@
 from nodnod.agent.base import Agent
 from nodnod.node import Node, Queue
-from nodnod.scope import Scope
+from nodnod.scope import Scope, validate_local_scope_is_linked_to_node_scopes
 from nodnod.interface.either import Either
 from nodnod.interface.result_node import ResultNode
 from nodnod.agent.event_loop.coroutine import compose_coroutine, dependency_sequential_either_coroutine, dependency_concurrent_either_corountine, result_node_compose_coroutine
@@ -113,6 +113,8 @@ class EventLoopAgent(Agent):
         mapped_scopes: dict[type[Node], Scope],
         futures: dict[type[Node], asyncio.Future] | None = None,
     ):
+        validate_local_scope_is_linked_to_node_scopes(local_scope, mapped_scopes)
+
         futures = futures if futures is not None else {}
         self.push_futures(
             local_scope,
