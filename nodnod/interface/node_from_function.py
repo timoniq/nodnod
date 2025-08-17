@@ -45,9 +45,9 @@ def initialize_node_with_externals(cls, values: set[Value[typing.Any]]) -> typin
     return cls.__compose__(**compose_kwargs)
 
 
-def create_node_from_function[T = typing.Any](
-    func: typing.Callable[..., T], 
-) -> type[Node[T]]:
+def create_node_from_function(
+    func: typing.Callable[..., typing.Any], 
+) -> type[Node]:
     node = create_node(
         f"Node:{func.__name__}",
         Node,
