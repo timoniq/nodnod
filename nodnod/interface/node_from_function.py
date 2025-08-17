@@ -69,7 +69,7 @@ def create_node_from_function(
     return node
 
 
-def create_agent_from_node(node: type[Node], agent_cls: type[Agent] = EventLoopAgent) -> Agent:
+def create_agent_from_node[T: Agent](node: type[Node], agent_cls: type[T] = EventLoopAgent) -> T:
     return agent_cls.build({node})
 
 
