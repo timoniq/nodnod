@@ -39,7 +39,8 @@ def initialize_node_with_externals(cls, values: set[Value[typing.Any]]) -> typin
             compose_kwargs[names[value.cls]] = value.value
     
     for external_name in externals:
-        compose_kwargs[external_name] = externals_value[external_name]
+        if external_name in externals:
+            compose_kwargs[external_name] = externals_value[external_name]
     
     return cls.__compose__(**compose_kwargs)
 
