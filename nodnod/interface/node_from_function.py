@@ -47,12 +47,12 @@ def initialize_node_with_externals(cls, values: set[Value[typing.Any]]) -> typin
 
 def create_node_from_function(
     func: typing.Callable[..., typing.Any], 
-) -> type[Node[typing.Any]]:
+) -> type[Node]:
     node = create_node(
-        func.__name__,
+        f"Node:{func.__name__}",
         Node,
         bases=(),
-        namespace={"__compose__": func},
+        namespace={"__compose__": func, "__module__": func.__module__},
         injection_hooks=(collect_externals_hook,),
     )
     node.__injections__.add(Externals)
