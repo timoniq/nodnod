@@ -15,6 +15,9 @@ class Signature:
         for t in self.kwargs.values():
             types.add(t)
         return types
+    
+    def merge(self) -> dict[str, typing.Any]:
+        return self.args | self.kwargs
 
 
 def resolve_signature(callable: typing.Callable[..., typing.Any], ignore_bound_parameters: bool = False) -> Signature:

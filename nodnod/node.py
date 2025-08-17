@@ -15,25 +15,29 @@ type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, N
 type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
 type Queue = list[type[Node]]
 
+type Injection[T] = typing.Annotated[T, ...]
+type InjectionHook = typing.Callable[["type[Node[typing.Any, typing.Any]]", str, type[typing.Any]], fntypes.Pulse[str]]
 
 @classmethod
 def dummy_compose[Cls](cls: type[Cls]) -> Cls:
-    return cls()
+    raise RuntimeError(f"{cls.__name__} does not provide __compose__. Maybe it should be abstract=True?")
 
 
 FORWARD_REF_REQUESTS = collections.defaultdict(list["type[Node]"])
 INITIALIZED_FORWARD_REFS = {}
 
-class Node[T = typing.Any]:    
+class Node[T = typing.Any, Root = type[None]]:    
+    __type__: type[typing.Any] = None  # type: ignore
     __dependencies__: set[type["Node"]] = None # type: ignore
     __injections__: set[type[typing.Any]] = None # type: ignore
+
     __initialize__: typing.Callable[[set["Value[typing.Any]"]], ComposeResponse[T]] = None # type: ignore
-    __type__: type[typing.Any] = None  # type: ignore
     __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
 
     def __init_subclass__(
         cls, 
         abstract: bool = False,
+        injection_hooks: tuple[InjectionHook, ...] = (),
     ) -> None:
         from nodnod.builder.build_queue import build_queue
         from nodnod.interface.create_result_node import create_result_node
@@ -62,7 +66,7 @@ class Node[T = typing.Any]:
             dependency_nodes = set[type[Node]]()
             injected_types = set[type]()
 
-            for dep_type in all_args.values():
+            for dep_name, dep_type in all_args.items():
                 if is_type(dep_type, Node):
                     dependency_nodes.add(dep_type)
                 elif is_union(dep_type):
@@ -83,7 +87,14 @@ class Node[T = typing.Any]:
 
                     dependency_nodes.add(type_arg_node)
                 else:
-                    injected_types.add(dep_type)
+                    is_processed_by_hook = False
+                    for hook in injection_hooks:
+                        if hook(cls, dep_name, dep_type):
+                            is_processed_by_hook = True
+                            break
+                    
+                    if not is_processed_by_hook:
+                        injected_types.add(dep_type)
 
             if cls.__dependencies__ is None:
                 cls.__dependencies__ = dependency_nodes
@@ -124,4 +135,4 @@ class Node[T = typing.Any]:
         return f"<node {type(self).__name__}>"
 
 
-__all__ = ("Node", "Queue")
+__all__ = ("Node", "Queue", "Injection")

@@ -7,5 +7,5 @@ class Agent:
     def build(cls, nodes: set[type[Node]]) -> typing.Self:
         ...
 
-    def run(self, local_scope: Scope, mapped_scopes: dict[type[Node], Scope]):
+    def run(self, local_scope: Scope, mapped_scopes: dict[type[Node], Scope]) -> typing.Any:
         ...
