@@ -49,7 +49,7 @@ def create_node_from_function[T = typing.Any](
     func: typing.Callable[..., T], 
 ) -> type[Node[T]]:
     node = create_node(
-        "".join(x.title() for x in func.__name__.split("_")),
+        f"Node:{func.__name__}",
         Node,
         bases=(),
         namespace={"__compose__": func, "__module__": func.__module__},
