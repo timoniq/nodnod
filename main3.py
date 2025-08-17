@@ -1,6 +1,6 @@
 from nodnod.node import Node
 from nodnod import Node, scalar_node, NodeError, EventLoopAgent, Scope
-from nodnod.interface.node_from_function import create_agent_from_node, create_node_from_function, inject_externals
+from nodnod.interface.node_from_function import create_agent_from_node, create_node_from_function, inject_externals, Externals
 from nodnod.interface.compose_one import compose_one
 import dataclasses
 import fntypes
@@ -52,6 +52,7 @@ class SinceActive:
 
 async def handler(email_provider: EmailProvider, boba: str, lol: str, since_active: SinceActive):
     print(email_provider, boba, lol, since_active)
+    return "handler result"
 
 
 async def main():
@@ -59,9 +60,11 @@ async def main():
     handler_node = create_node_from_function(handler)
     agent = create_agent_from_node(handler_node, EventLoopAgent)
 
+    user = User(1, fntypes.Some("lol@skibidi.org"), datetime.datetime.now())
+
     # Run time
     async with Scope() as scope:
-        scope.inject(User, User(1, fntypes.Some("lol@skibidi.org"), datetime.datetime.now()))
+        scope.inject(User, user)
         inject_externals(scope, {"boba": "ahah", "lol": "omg"})
         await agent.run(scope, {})
 
@@ -70,6 +73,13 @@ async def main():
         await compose_one(
             SinceActive, 
             {User: User(2, fntypes.Nothing(), datetime.datetime.now())},
+        )
+    )
+
+    print(
+        await compose_one(
+            create_node_from_function(handler),
+            {User: user, Externals: {"boba": "tea", "lol": "0"}},
         )
     )
 
