@@ -94,6 +94,8 @@ class Node[T = typing.Any, Root = type[None]]:
                             break
                     
                     if not is_processed_by_hook:
+                        if is_type(dep_type, Injection):
+                            dep_type = typing.get_args(dep_type)[0]
                         injected_types.add(dep_type)
 
             if cls.__dependencies__ is None:

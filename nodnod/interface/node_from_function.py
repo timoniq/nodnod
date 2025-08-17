@@ -57,7 +57,15 @@ def create_node_from_function(
     )
     node.__injections__.add(Externals)
     node.__initialize__ = initialize_node_with_externals  # type: ignore
-    setattr(node, "__names__", reverse_dict(resolve_signature(func).merge()))
+
+    names = {}
+
+    for dep_type, dep_name in reverse_dict(resolve_signature(func).merge()).items():
+        if is_type(dep_type, Injection):
+            dep_type = typing.get_args(dep_type)[0]
+        names[dep_type] = dep_name
+
+    setattr(node, "__names__", names)
     return node
 
 
