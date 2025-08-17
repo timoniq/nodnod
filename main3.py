@@ -1,6 +1,7 @@
 from nodnod.node import Node
 from nodnod import Node, scalar_node, NodeError, EventLoopAgent, Scope
 from nodnod.interface.node_from_function import create_agent_from_node, create_node_from_function, inject_externals
+from nodnod.interface.compose_one import compose_one
 import dataclasses
 import fntypes
 import datetime
@@ -63,6 +64,14 @@ async def main():
         scope.inject(User, User(1, fntypes.Some("lol@skibidi.org"), datetime.datetime.now()))
         inject_externals(scope, {"boba": "ahah", "lol": "omg"})
         await agent.run(scope, {})
+
+    
+    print(
+        await compose_one(
+            SinceActive, 
+            {User: User(2, fntypes.Nothing(), datetime.datetime.now())},
+        )
+    )
 
 
 import asyncio
