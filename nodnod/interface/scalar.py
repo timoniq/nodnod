@@ -36,7 +36,6 @@ class scalar_node[T]:  # noqa: N801
     def __new__(cls, x: T, /) -> type[T]: ...
 
     def __new__(cls, node_class: typing.Any, /) -> typing.Any:
-
         if inspect.isfunction(node_class):
             node_class = type(node_class.__name__, (), dict(__compose__=node_class))
 
