@@ -30,5 +30,8 @@ def create_result_node[T, Err: Exception](result: type[fntypes.Result[T, Err]]) 
          __from_node__=node_cls, 
          __error__=error_cls, 
          __module__=__name__,
-    ),
+      ),
    )
+
+
+__all__ = ("create_result_node",)

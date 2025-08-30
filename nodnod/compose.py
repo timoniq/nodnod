@@ -14,12 +14,12 @@ async def initialize_node[T](cls: type[Node], value: ComposeResponse[T]) -> Valu
         value = typing.cast(T, await value)
     
     if isinstance(value, types.GeneratorType):
-        generator = typing.cast(typing.Generator[T, None, None], value)
+        generator = typing.cast("typing.Generator[T, None, None]", value)
         value = generator_send(generator).expect("Generator did not generate any value")
         return Value(cls, value, generator=generator)
     
     if isinstance(value, types.AsyncGeneratorType):
-        generator = typing.cast(typing.AsyncGenerator[T, None], value)
+        generator = typing.cast("typing.AsyncGenerator[T, None]", value)
         value = (await generator_asend(generator)).expect("Generator did not generate any value")
         return Value(cls, value, generator=generator)
     
@@ -67,3 +67,6 @@ async def compose_node[T](
         return fntypes.Error(NodeError(f"failed to compose `{node.__name__}`", from_error=e))
 
     return fntypes.Ok(node_scope[node])
+
+
+__all__ = ("compose_node", "initialize_node")

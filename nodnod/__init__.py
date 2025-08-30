@@ -6,16 +6,16 @@ from .scope import Scope
 from .value import Value
 
 __all__ = (
-    "LayerAgent",
-    "EventLoopAgent",
-    "Node",
-    "Scope",
-    "NodeError",
-    "DataNode",
     "ConcurrentEither",
+    "DataNode",
+    "EventLoopAgent",
+    "LayerAgent",
+    "Node",
+    "NodeError",
+    "Scope",
     "SequentialEither",
-    "scalar_node",
-    "polymorphic",
-    "case",
     "Value",
+    "case",
+    "polymorphic",
+    "scalar_node",
 )

@@ -44,7 +44,7 @@ class polymorphic[T]:  # noqa: N801
     POLYMORPHIC_NODE_CLS = PolymorphicNode
 
     def __new__(cls, node_class: type[typing.Any]) -> type[PolymorphicNode[T]]:
-        case_nodes: list[type[Node[typing.Any]]] = []
+        case_nodes: list[type[Node]] = []
 
         for case in collect_cases(node_class):
             node = create_node(
@@ -63,4 +63,4 @@ class polymorphic[T]:  # noqa: N801
         )
 
 
-__all__ = ("PolymorphicNode", "polymorphic", "case", "collect_cases")
+__all__ = ("PolymorphicNode", "case", "collect_cases", "polymorphic")

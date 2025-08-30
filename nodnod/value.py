@@ -5,7 +5,7 @@ import types
 import typing
 
 
-class Value[T]:
+class Value[T = typing.Any]:
     def __init__(self, cls: type[typing.Any], value: T, generator: Generator[T] | None = None):
         self.cls = cls
         self.value = value

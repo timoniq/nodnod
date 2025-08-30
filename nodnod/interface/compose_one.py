@@ -20,3 +20,6 @@ async def compose_one[T](
             scope.inject(t, v)
         await agent.run(scope, mapped_scopes=mapped_scopes or {})
         return scope[node].value
+
+
+__all__ = ("compose_one",)

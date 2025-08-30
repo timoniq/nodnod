@@ -20,3 +20,6 @@ class ResultNode[T, Err: Exception](Node[fntypes.Result[T, Err]]):
          return fntypes.Ok()
       except BaseException as e:
          return fntypes.Error(e)
+
+
+__all__ = ("ResultNode",)
