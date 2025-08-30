@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import types
 import typing
-from functools import cache
+from contextvars import ContextVar
 
 if typing.TYPE_CHECKING:
     from nodnod.interface.composable import Composable
     from nodnod.node import Node
+
+COMPOSABLE_NODES: typing.Final = ContextVar("COMPOSABLE_NODES", default={})
 
 
 def create_node[T: Node[typing.Any]](
@@ -24,11 +26,16 @@ def create_node[T: Node[typing.Any]](
     )
 
 
-@cache
 def create_node_from_composable(composable: type[Composable]) -> type[Node[typing.Any, typing.Any]]:
+    composable = typing.get_origin(composable) or composable
+    composable_nodes = COMPOSABLE_NODES.get()
+
+    if (node := composable_nodes.get(composable)) is not None:
+        return node
+
     from nodnod.node import Node
 
-    return create_node(
+    node = create_node(
         name=f"Node:{composable.__name__}",
         base_node=Node,
         bases=(),
@@ -38,6 +45,7 @@ def create_node_from_composable(composable: type[Composable]) -> type[Node[typin
             __module__=composable.__module__,
         ),
     )
+    return composable_nodes.setdefault(composable, node)
 
 
 __all__ = (

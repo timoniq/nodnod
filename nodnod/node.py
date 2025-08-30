@@ -4,6 +4,7 @@ import typing
 import fntypes
 
 from nodnod.error import NodeBuildError
+from nodnod.utils.bundle import bundle
 from nodnod.utils.is_type import is_type
 from nodnod.utils.misc import reverse_dict
 from nodnod.utils.resolve_signature import resolve_signature
@@ -29,7 +30,7 @@ def dummy_compose[Cls](cls: type[Cls]) -> Cls:
 
 class Node[T = typing.Any, Root = type[None]]:    
     __type__: type[typing.Any] = None  # type: ignore
-    __dependencies__: set[type["Node"]] = None  # type: ignore
+    __dependencies__: set[type["Node[typing.Any, typing.Any]"]] = None  # type: ignore
     __injections__: set[type[typing.Any]] = None  # type: ignore
 
     __initialize__: typing.Callable[[set["Value[typing.Any]"]], ComposeResponse[T]] = None  # type: ignore
@@ -67,14 +68,15 @@ class Node[T = typing.Any, Root = type[None]]:
             dependency_nodes = set[type[Node[typing.Any, typing.Any]]]()
             injected_types = set[type[typing.Any]]()
 
-            for dep_name, dep_type in all_args.items():
+            for dep_name, dep_type in all_args.copy().items():
                 if isinstance(dep_type, typing.TypeAliasType):
                     dep_type = dep_type.__value__
 
                 if is_type(dep_type, Node):
                     dependency_nodes.add(dep_type)
                 elif is_type(dep_type, Composable):
-                    dependency_nodes.add(create_node_from_composable(dep_type))
+                    all_args[dep_name] = typing.get_origin(dep_type) or dep_type
+                    dependency_nodes.add(create_node_from_composable(all_args[dep_name]))
                 elif is_union(dep_type):
                     dependency_nodes.add(create_union_node(dep_type))
                 elif is_type(dep_type, fntypes.Option):
@@ -125,7 +127,7 @@ class Node[T = typing.Any, Root = type[None]]:
                             }
                         ),
                     ).then(
-                        lambda params: cls.__compose__(**params),
+                        lambda context: bundle(cls.__compose__, signature, context),
                     )
                 )
             

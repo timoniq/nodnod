@@ -393,6 +393,16 @@ class TestCreateNodeFromComposable:
         assert isinstance(node_class.__dependencies__, set)
         assert isinstance(node_class.__injections__, set)
 
+    def test_composable_node_with_generic(self):
+        class GenericComposable[T]:
+            @classmethod
+            def __compose__(cls) -> int:
+                return 42
+        
+        node_class1 = create_node_from_composable(GenericComposable[str])
+        node_class2 = create_node_from_composable(GenericComposable[int])
+        assert node_class1 is node_class2
+
     @pytest.mark.asyncio
     async def test_create_node_from_async_composable(self):
         class AsyncComposable:

@@ -2,6 +2,8 @@ import dataclasses
 import inspect
 import typing
 
+type AnnotationForm = typing.Any | typing.ForwardRef
+
 
 @dataclasses.dataclass
 class Signature:
@@ -10,7 +12,15 @@ class Signature:
     var_positional: inspect.Parameter | None = None
     var_keyword: inspect.Parameter | None = None
 
-    def get_all_types(self) -> set[type[typing.Any] | typing.ForwardRef]:
+    @property
+    def var_positional_type(self) -> AnnotationForm | None:
+        return self.var_positional.annotation if self.var_positional else None
+
+    @property
+    def var_keyword_type(self) -> AnnotationForm | None:
+        return self.var_keyword.annotation if self.var_keyword else None
+
+    def get_all_types(self) -> set[AnnotationForm]:
         types = set[type[typing.Any] | typing.ForwardRef]()
         for t in self.args.values():
             types.add(t)
@@ -54,9 +64,7 @@ def resolve_signature(callable: typing.Callable[..., typing.Any], ignore_bound_p
         if isinstance(typ, str):
             typ = typing.ForwardRef(typ)
 
-        if param.default is param.empty and param.kind in (
-            param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD
-        ):
+        if param.default is param.empty and param.kind is param.POSITIONAL_ONLY:
             args[name] = typ
         else:
             kwargs[name] = typ

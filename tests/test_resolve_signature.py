@@ -1,26 +1,26 @@
-import pytest
-import typing
-from nodnod.utils.resolve_signature import resolve_signature, Signature
+from nodnod.utils.resolve_signature import Signature, resolve_signature
 
 
 class TestResolveSignature:
     def test_resolve_signature_simple_function(self):
-        def simple_func(a: int, b: str) -> None:
+        def simple_func(a: int, /, b: str, *, c: bool = False) -> None:
             pass
         
         sig = resolve_signature(simple_func)
         assert isinstance(sig, Signature)
         assert 'a' in sig.args
-        assert 'b' in sig.args
+        assert 'b' in sig.kwargs
+        assert 'c' in sig.kwargs
         assert sig.args['a'] == int
-        assert sig.args['b'] == str
+        assert sig.kwargs['b'] == str
+        assert sig.kwargs['c'] == bool
     
     def test_resolve_signature_with_defaults(self):
         def func_with_defaults(a: int, b: str = "default") -> None:
             pass
         
         sig = resolve_signature(func_with_defaults)
-        assert 'a' in sig.args
+        assert 'a' in sig.kwargs
         assert 'b' in sig.kwargs
         assert sig.kwargs['b'] == str
     
@@ -31,9 +31,9 @@ class TestResolveSignature:
         
         sig = resolve_signature(TestClass.method, ignore_bound_parameters=True)
         # Should ignore 'self'
-        assert 'a' in sig.args
-        assert 'b' in sig.args
-        assert len(sig.args) == 2
+        assert 'a' in sig.kwargs
+        assert 'b' in sig.kwargs
+        assert len(sig.kwargs) == 2
     
     def test_resolve_signature_class_method(self):
         class TestClass:
@@ -43,8 +43,8 @@ class TestResolveSignature:
         
         sig = resolve_signature(TestClass.class_method, ignore_bound_parameters=True)
         # Should ignore 'cls'
-        assert 'a' in sig.args
-        assert 'b' in sig.args
+        assert 'a' in sig.kwargs
+        assert 'b' in sig.kwargs
     
     def test_signature_get_all_types(self):
         def func(a: int, b: str, c: bool = True) -> None:
@@ -64,8 +64,8 @@ class TestResolveSignature:
                 pass
         
         sig = resolve_signature(TestClass.static_method)
-        assert 'a' in sig.args
-        assert 'b' in sig.args
+        assert 'a' in sig.kwargs
+        assert 'b' in sig.kwargs
     
     def test_resolve_signature_framework_specific(self):
         from nodnod import scalar_node
@@ -78,5 +78,5 @@ class TestResolveSignature:
         
         # Test that framework can resolve signatures of node compositions
         sig = resolve_signature(TestNode.__compose__, ignore_bound_parameters=True)
-        assert 'a' in sig.args
-        assert 'b' in sig.args
+        assert 'a' in sig.kwargs
+        assert 'b' in sig.kwargs

@@ -1,10 +1,10 @@
-from nodnod.node import Node
-from nodnod import Node, scalar_node, NodeError, EventLoopAgent, Scope
+from nodnod import scalar_node, NodeError, EventLoopAgent, Scope
 from nodnod.interface.node_from_function import create_agent_from_node, create_node_from_function, inject_externals, Externals
 from nodnod.interface.compose_one import compose_one
 import dataclasses
 import fntypes
 import datetime
+import typing
 
 
 @dataclasses.dataclass
@@ -34,10 +34,13 @@ class Email(str):
         return email
 
 
-class Wow:
+@dataclasses.dataclass
+class UserSource:
+    user: User
+    
     @classmethod
-    def __compose__(cls) -> str:
-        return "wow"
+    def __compose__(cls, user: User) -> typing.Self:
+        return cls(user)
 
 
 @scalar_node
@@ -57,8 +60,8 @@ class SinceActive:
         return datetime.datetime.now() - user.last_active
 
 
-async def handler(email_provider: EmailProvider, boba: str, lol: str, since_active: SinceActive, wow: Wow):
-    print(email_provider, boba, lol, since_active, wow)
+async def handler(email_provider: EmailProvider, boba: str, lol: str, since_active: SinceActive, user: UserSource):
+    print(email_provider, boba, lol, since_active, user.user)
     return "handler result"
 
 
