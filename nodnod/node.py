@@ -1,7 +1,7 @@
+import collections
 import typing
 
 import fntypes
-import collections
 
 from nodnod.error import NodeBuildError
 from nodnod.utils.is_type import is_type
@@ -13,25 +13,26 @@ if typing.TYPE_CHECKING:
 
 type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, None]
 type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
-type Queue = list[type[Node]]
+type Queue = list[type[Node[typing.Any, typing.Any]]]
 
 type Injection[T] = typing.Annotated[T, ...]
 type InjectionHook = typing.Callable[["type[Node[typing.Any, typing.Any]]", str, type[typing.Any]], fntypes.Pulse[str]]
 
+FORWARD_REF_REQUESTS = collections.defaultdict(list["type[Node[typing.Any, typing.Any]]"])
+INITIALIZED_FORWARD_REFS = {}
+
+
 @classmethod
 def dummy_compose[Cls](cls: type[Cls]) -> Cls:
-    raise RuntimeError(f"{cls.__name__} does not provide __compose__. Maybe it should be abstract=True?")
+    raise RuntimeError(f"`{cls.__name__}` does not provide `__compose__`. Maybe it should be abstract=True?")
 
-
-FORWARD_REF_REQUESTS = collections.defaultdict(list["type[Node]"])
-INITIALIZED_FORWARD_REFS = {}
 
 class Node[T = typing.Any, Root = type[None]]:    
     __type__: type[typing.Any] = None  # type: ignore
-    __dependencies__: set[type["Node"]] = None # type: ignore
-    __injections__: set[type[typing.Any]] = None # type: ignore
+    __dependencies__: set[type["Node"]] = None  # type: ignore
+    __injections__: set[type[typing.Any]] = None  # type: ignore
 
-    __initialize__: typing.Callable[[set["Value[typing.Any]"]], ComposeResponse[T]] = None # type: ignore
+    __initialize__: typing.Callable[[set["Value[typing.Any]"]], ComposeResponse[T]] = None  # type: ignore
     __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
 
     def __init_subclass__(
@@ -40,15 +41,17 @@ class Node[T = typing.Any, Root = type[None]]:
         injection_hooks: tuple[InjectionHook, ...] = (),
     ) -> None:
         from nodnod.builder.build_queue import build_queue
+        from nodnod.interface.composable import Composable
         from nodnod.interface.create_result_node import create_result_node
         from nodnod.interface.generic import create_type_arg_node
         from nodnod.interface.option_node import create_option_node
         from nodnod.interface.union_node import create_union_node, is_union
+        from nodnod.utils.create_node import create_node_from_composable
 
         if not abstract and not cls.__initialize__:
             # Resolve dependecies via __compose__ signature
             signature = resolve_signature(cls.__compose__, ignore_bound_parameters=True)
-            all_args = signature.args | signature.kwargs
+            all_args = signature.merge()
 
             # Search for forward refs and form requests to initialize node when forward ref node is initialized
             # or fill forward refs if node is being initialized
@@ -59,16 +62,19 @@ class Node[T = typing.Any, Root = type[None]]:
                         continue
                     FORWARD_REF_REQUESTS[dep_type.__forward_arg__].append(cls)
                     return
-                
-            all_args = typing.cast(dict[str, type], all_args)
 
             # Dependencies are all types from __compose__ signature
-            dependency_nodes = set[type[Node]]()
-            injected_types = set[type]()
+            dependency_nodes = set[type[Node[typing.Any, typing.Any]]]()
+            injected_types = set[type[typing.Any]]()
 
             for dep_name, dep_type in all_args.items():
+                if isinstance(dep_type, typing.TypeAliasType):
+                    dep_type = dep_type.__value__
+
                 if is_type(dep_type, Node):
                     dependency_nodes.add(dep_type)
+                elif is_type(dep_type, Composable):
+                    dependency_nodes.add(create_node_from_composable(dep_type))
                 elif is_union(dep_type):
                     dependency_nodes.add(create_union_node(dep_type))
                 elif is_type(dep_type, fntypes.Option):
@@ -134,7 +140,7 @@ class Node[T = typing.Any, Root = type[None]]:
                 request.__init_subclass__()
     
     def __repr__(self) -> str:
-        return f"<node {type(self).__name__}>"
+        return f"<node `{type(self).__name__}`>"
 
 
 __all__ = ("Node", "Queue", "Injection")

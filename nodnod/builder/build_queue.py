@@ -1,12 +1,12 @@
 import typing
-from nodnod.builder.validate_graph import validate_no_circular_dependency
 
+from nodnod.builder.validate_graph import validate_no_circular_dependency
 
 if typing.TYPE_CHECKING:
     from nodnod.node import Node, Queue
 
 
-def build_queue(final: type["Node"], queue: "Queue") -> "Queue":
+def build_queue(final: type["Node[typing.Any, typing.Any]"], queue: "Queue") -> "Queue":
     """`Depth-first traversal` to simply compute node compositional order without any optimizations"""
     validate_no_circular_dependency(final, list())
 

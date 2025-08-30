@@ -33,7 +33,7 @@ class TestPolymorphicExtended:
             def __compose__(cls) -> int:
                 return 42
         
-        class NonScalarConverter(Node):
+        class NonScalarConverter(Node, abstract=True):
             # Remove is_scalar to make it non-scalar
             
             @case

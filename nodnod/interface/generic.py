@@ -57,7 +57,7 @@ class generic_node:  # noqa: N801
 
 
 def create_type_arg_node(
-    generic_node: type[Node],
+    generic_node: type[Node[typing.Any, typing.Any]],
     type_arg: typing.Any,
     node_type: typing.Any,
 ) -> type[Node]:

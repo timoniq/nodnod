@@ -47,8 +47,6 @@ async def result_node_compose_coroutine(
     return fntypes.Ok(value)
     
 
-
-
 async def dependency_sequential_either_coroutine(
     first_dependency: tuple[type[Node], DependencyFuture],
     other_dependencies: tuple[type[Node], ...],

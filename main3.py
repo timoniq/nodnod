@@ -19,7 +19,8 @@ class UserId:
     @classmethod
     def __compose__(cls, user: User) -> int:
         return user.id
-    
+
+
 @scalar_node
 class Email(str):
     def validate_email(self):
@@ -31,6 +32,12 @@ class Email(str):
         email = cls(user.email.expect(NodeError("User has no email")))
         email.validate_email()
         return email
+
+
+class Wow:
+    @classmethod
+    def __compose__(cls) -> str:
+        return "wow"
 
 
 @scalar_node
@@ -50,8 +57,8 @@ class SinceActive:
         return datetime.datetime.now() - user.last_active
 
 
-async def handler(email_provider: EmailProvider, boba: str, lol: str, since_active: SinceActive):
-    print(email_provider, boba, lol, since_active)
+async def handler(email_provider: EmailProvider, boba: str, lol: str, since_active: SinceActive, wow: Wow):
+    print(email_provider, boba, lol, since_active, wow)
     return "handler result"
 
 

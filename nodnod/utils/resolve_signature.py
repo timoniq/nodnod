@@ -1,12 +1,14 @@
 import dataclasses
-import typing
 import inspect
+import typing
 
 
 @dataclasses.dataclass
 class Signature:
     args: dict[str, type[typing.Any] | typing.ForwardRef]
     kwargs: dict[str, type[typing.Any] | typing.ForwardRef]
+    var_positional: inspect.Parameter | None = None
+    var_keyword: inspect.Parameter | None = None
 
     def get_all_types(self) -> set[type[typing.Any] | typing.ForwardRef]:
         types = set[type[typing.Any] | typing.ForwardRef]()
@@ -32,9 +34,19 @@ def resolve_signature(callable: typing.Callable[..., typing.Any], ignore_bound_p
     hints = callable.__annotations__
     args = {}
     kwargs = {}
+    var_positional = None
+    var_keyword = None
 
     for name, param in sig.parameters.items():
         if ignore_bound_parameters and name in {"cls", "self"}:
+            continue
+
+        if param.kind == inspect.Parameter.VAR_POSITIONAL:
+            var_positional = param
+            continue
+
+        if param.kind == inspect.Parameter.VAR_KEYWORD:
+            var_keyword = param
             continue
 
         typ = hints.get(name, typing.Any)
@@ -49,4 +61,9 @@ def resolve_signature(callable: typing.Callable[..., typing.Any], ignore_bound_p
         else:
             kwargs[name] = typ
 
-    return Signature(args=args, kwargs=kwargs)
+    return Signature(
+        args=args, 
+        kwargs=kwargs, 
+        var_positional=var_positional, 
+        var_keyword=var_keyword,
+    )

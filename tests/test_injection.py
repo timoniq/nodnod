@@ -81,16 +81,17 @@ class TestInjection:
         
         # Create different scopes with different database connections
         global_scope = Scope(detail="global")
-        user_scope = global_scope.create_child("user")
-        admin_scope = global_scope.create_child("admin")
+        admin_scope = global_scope.create_child(detail="admin")
+        user_scope = admin_scope.create_child(detail="user")
+        local_scope = user_scope.create_child(detail="local")
         
         user_scope.push(Value(DatabaseConnection, DatabaseConnection("user_db")))
         admin_scope.push(Value(DatabaseConnection, DatabaseConnection("admin_db")))
         
-        async with user_scope:
+        async with local_scope:
             await agent.run(
-                local_scope=user_scope, 
-                mapped_scopes={AdminService: admin_scope}
+                local_scope=local_scope, 
+                mapped_scopes={UserService: user_scope, AdminService: admin_scope}
             )
             
             user_result = user_scope.retrieve(UserService)
