@@ -44,4 +44,4 @@ class NodeBuildError(NodeError):
     pass
 
 
-__all__ = ("NodeError", "NodeBuildError", "repr_node_error")
+__all__ = ("NodeBuildError", "NodeError", "repr_node_error")

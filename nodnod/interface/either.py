@@ -46,4 +46,4 @@ class ConcurrentEither(Either, abstract=True):
     is_concurrent = True
 
 
-__all__ = ("Either", "SequentialEither", "ConcurrentEither")
+__all__ = ("ConcurrentEither", "Either", "SequentialEither")

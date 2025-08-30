@@ -82,7 +82,7 @@ ignore = [
   "PLR0913"
 ]
 fixable = ["ALL"]
-exclude = [".venv", ".idea", "docs"]
+exclude = [".venv", ".idea", "docs", "tests/**.py"]
 
 [tool.coverage.run]
 omit = [
@@ -104,6 +104,7 @@ exclude = [
   ".idea",
   ".ruff_cache",
   ".pytest_cache",
+  "tests",
   "local",
 ]
 typeCheckingMode = "basic"

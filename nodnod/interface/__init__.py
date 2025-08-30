@@ -5,11 +5,11 @@ from nodnod.interface.polymorphic import polymorphic, case
 from nodnod.interface.result_node import ResultNode
 
 __all__ = (
-    "DataNode",
     "ConcurrentEither",
-    "SequentialEither",
-    "scalar_node",
-    "polymorphic",
-    "case",
+    "DataNode",
     "ResultNode",
+    "SequentialEither",
+    "case",
+    "polymorphic",
+    "scalar_node",
 )

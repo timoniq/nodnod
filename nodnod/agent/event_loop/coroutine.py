@@ -118,7 +118,7 @@ async def dependency_concurrent_either_corountine(
 
 __all__ = (
     "compose_coroutine",
-    "result_node_compose_coroutine",
-    "dependency_sequential_either_coroutine",
     "dependency_concurrent_either_corountine",
+    "dependency_sequential_either_coroutine",
+    "result_node_compose_coroutine",
 )

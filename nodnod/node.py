@@ -29,9 +29,9 @@ def dummy_compose[Cls](cls: type[Cls]) -> Cls:
 
 
 class Node[T = typing.Any, Root = typing.Any]:    
-    __type__: type[typing.Any] = None  # type: ignore
+    __type__: typing.Any = None  # type: ignore
     __dependencies__: set[type["Node"]] = None  # type: ignore
-    __injections__: set[type[typing.Any]] = None  # type: ignore
+    __injections__: set[typing.Any] = None  # type: ignore
 
     __initialize__: typing.Callable[[set["Value"]], ComposeResponse[T]] = None  # type: ignore
     __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
@@ -145,4 +145,4 @@ class Node[T = typing.Any, Root = typing.Any]:
         return f"<node `{type(self).__name__}`>"
 
 
-__all__ = ("Node", "Queue", "Injection")
+__all__ = ("Injection", "Node", "Queue")

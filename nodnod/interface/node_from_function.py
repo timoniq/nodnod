@@ -80,4 +80,4 @@ def inject_externals(
     scope.inject(Externals, Externals(externals))
 
 
-__all__ = ("create_node_from_function", "create_agent_from_node", "inject_externals")
+__all__ = ("create_agent_from_node", "create_node_from_function", "inject_externals")

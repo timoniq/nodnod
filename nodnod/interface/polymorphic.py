@@ -63,4 +63,4 @@ class polymorphic[T]:  # noqa: N801
         )
 
 
-__all__ = ("PolymorphicNode", "polymorphic", "case", "collect_cases")
+__all__ = ("PolymorphicNode", "case", "collect_cases", "polymorphic")
