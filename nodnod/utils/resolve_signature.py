@@ -1,6 +1,7 @@
 import dataclasses
 import inspect
 import typing
+from functools import cache
 
 type AnnotationForm = typing.Any | typing.ForwardRef
 
@@ -32,13 +33,12 @@ class Signature:
         return self.args | self.kwargs
 
 
+@cache
 def resolve_signature(callable: typing.Callable[..., typing.Any], ignore_bound_parameters: bool = False) -> Signature:
     """Resolves callable signature"""
 
-    if isinstance(callable, classmethod):
-        callable = callable.__func__
-    elif isinstance(callable, staticmethod):
-        callable = callable.__func__
+    if isinstance(callable, classmethod | staticmethod):
+        callable = callable.__func__  # type: ignore
 
     sig = inspect.signature(callable)
     hints = callable.__annotations__
@@ -75,3 +75,6 @@ def resolve_signature(callable: typing.Callable[..., typing.Any], ignore_bound_p
         var_positional=var_positional, 
         var_keyword=var_keyword,
     )
+
+
+__all__ = ("Signature", "resolve_signature")

@@ -4,7 +4,7 @@ import typing
 import fntypes
 
 from nodnod.error import NodeBuildError
-from nodnod.utils.bundle import bundle
+from nodnod.utils.call import call_with_context
 from nodnod.utils.is_type import is_type
 from nodnod.utils.misc import reverse_dict
 from nodnod.utils.resolve_signature import resolve_signature
@@ -14,12 +14,12 @@ if typing.TYPE_CHECKING:
 
 type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, None]
 type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
-type Queue = list[type[Node[typing.Any, typing.Any]]]
+type Queue = list[type[Node]]
 
 type Injection[T] = typing.Annotated[T, ...]
-type InjectionHook = typing.Callable[["type[Node[typing.Any, typing.Any]]", str, type[typing.Any]], fntypes.Pulse[str]]
+type InjectionHook = typing.Callable[["type[Node]", str, type[typing.Any]], fntypes.Pulse[str]]
 
-FORWARD_REF_REQUESTS = collections.defaultdict(list["type[Node[typing.Any, typing.Any]]"])
+FORWARD_REF_REQUESTS = collections.defaultdict(list["type[Node]"])
 INITIALIZED_FORWARD_REFS = {}
 
 
@@ -28,12 +28,12 @@ def dummy_compose[Cls](cls: type[Cls]) -> Cls:
     raise RuntimeError(f"`{cls.__name__}` does not provide `__compose__`. Maybe it should be abstract=True?")
 
 
-class Node[T = typing.Any, Root = type[None]]:    
+class Node[T = typing.Any, Root = typing.Any]:    
     __type__: type[typing.Any] = None  # type: ignore
-    __dependencies__: set[type["Node[typing.Any, typing.Any]"]] = None  # type: ignore
+    __dependencies__: set[type["Node"]] = None  # type: ignore
     __injections__: set[type[typing.Any]] = None  # type: ignore
 
-    __initialize__: typing.Callable[[set["Value[typing.Any]"]], ComposeResponse[T]] = None  # type: ignore
+    __initialize__: typing.Callable[[set["Value"]], ComposeResponse[T]] = None  # type: ignore
     __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
 
     def __init_subclass__(
@@ -65,12 +65,12 @@ class Node[T = typing.Any, Root = type[None]]:
                     return
 
             # Dependencies are all types from __compose__ signature
-            dependency_nodes = set[type[Node[typing.Any, typing.Any]]]()
+            dependency_nodes = set[type[Node]]()
             injected_types = set[type[typing.Any]]()
 
             for dep_name, dep_type in all_args.copy().items():
                 if isinstance(dep_type, typing.TypeAliasType):
-                    dep_type = dep_type.__value__
+                    dep_type = all_args[dep_name] = dep_type.__value__
 
                 if is_type(dep_type, Node):
                     dependency_nodes.add(dep_type)
@@ -117,7 +117,7 @@ class Node[T = typing.Any, Root = type[None]]:
                 kwargs_names_by_type = reverse_dict(all_args)
 
                 cls.__initialize__ = (
-                    fntypes.F[set["Value[typing.Any]"]]()
+                    fntypes.F[set["Value"]]()
                     .then(
                         lambda values: (
                             {
@@ -127,7 +127,7 @@ class Node[T = typing.Any, Root = type[None]]:
                             }
                         ),
                     ).then(
-                        lambda context: bundle(cls.__compose__, signature, context),
+                        lambda context: call_with_context(cls.__compose__, context),
                     )
                 )
             

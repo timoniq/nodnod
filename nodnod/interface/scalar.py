@@ -1,16 +1,11 @@
-import typing
 import inspect
+import typing
 
+from nodnod.interface.composable import Composable
 from nodnod.node import Node
 from nodnod.utils.create_node import create_node
 
 type Generator[T] = typing.Generator[T, typing.Any, typing.Any] | typing.AsyncGenerator[T, typing.Any]
-
-
-class Composable[T](typing.Protocol):
-    @classmethod
-    def __compose__(cls, *args: typing.Any, **kwargs: typing.Any) -> T:
-        ...
 
 
 class scalar_node[T]:  # noqa: N801

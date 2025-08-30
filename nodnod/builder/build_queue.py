@@ -6,7 +6,7 @@ if typing.TYPE_CHECKING:
     from nodnod.node import Node, Queue
 
 
-def build_queue(final: type["Node[typing.Any, typing.Any]"], queue: "Queue") -> "Queue":
+def build_queue(final: type["Node"], queue: "Queue") -> "Queue":
     """`Depth-first traversal` to simply compute node compositional order without any optimizations"""
     validate_no_circular_dependency(final, list())
 
@@ -25,3 +25,6 @@ def traverse_all(nodes: set[type["Node"]]) -> "Queue":
     for node in nodes:
         build_queue(node, all_nodes)
     return all_nodes
+
+
+__all__ = ("build_queue", "traverse_all")

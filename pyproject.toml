@@ -15,8 +15,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ruff>=0.12.5,<1",
-    "basedpyright>=1.31.0,<2",
+    "ruff>=0.12.11,<1",
+    "basedpyright>=1.31.3,<2",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
     "pytest-cov>=6.2.1",
@@ -83,6 +83,17 @@ ignore = [
 ]
 fixable = ["ALL"]
 exclude = [".venv", ".idea", "docs"]
+
+[tool.coverage.run]
+omit = [
+    "nodnod/agent/layer/*.py",
+    "nodnod/builder/build_parallels.py",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "if __debug__",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]

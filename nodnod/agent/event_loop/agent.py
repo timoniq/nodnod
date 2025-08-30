@@ -9,6 +9,7 @@ import asyncio
 import typing
 import fntypes
 
+
 class EventLoopAgent(Agent):
     def __init__(
         self, 
@@ -131,3 +132,6 @@ class EventLoopAgent(Agent):
         for result in results:
             if fntypes.is_err(result):
                 raise result.error
+
+
+__all__ = ("EventLoopAgent",)

@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 COMPOSABLE_NODES: typing.Final = ContextVar("COMPOSABLE_NODES", default={})
 
 
-def create_node[T: Node[typing.Any]](
+def create_node[T: Node](
     name: str,
     base_node: type[T],
     bases: tuple[typing.Any, ...],
@@ -26,7 +26,7 @@ def create_node[T: Node[typing.Any]](
     )
 
 
-def create_node_from_composable(composable: type[Composable]) -> type[Node[typing.Any, typing.Any]]:
+def create_node_from_composable(composable: type[Composable]) -> type[Node]:
     composable = typing.get_origin(composable) or composable
     composable_nodes = COMPOSABLE_NODES.get()
 

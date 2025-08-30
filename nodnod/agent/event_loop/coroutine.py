@@ -55,8 +55,7 @@ async def dependency_sequential_either_coroutine(
     mapped_scopes: dict[type[Node], Scope],
     local_scope: Scope,
 ) -> fntypes.Result[Value[typing.Any], NodeError]:
-    """
-    How sequential either is getting resolved:
+    """How sequential either is getting resolved:
 
     SequentialEither[A, B, C]
        `A` already has an active future
@@ -115,3 +114,11 @@ async def dependency_concurrent_either_corountine(
         candidate_dependencies = pending
 
     return fntypes.Error(NodeError("no option found for either", from_many=errors))
+
+
+__all__ = (
+    "compose_coroutine",
+    "result_node_compose_coroutine",
+    "dependency_sequential_either_coroutine",
+    "dependency_concurrent_either_corountine",
+)
