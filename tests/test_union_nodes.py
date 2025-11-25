@@ -1,6 +1,6 @@
 import typing
 
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import EventLoopAgent, Node, Scope, scalar_node
@@ -52,6 +52,6 @@ class TestUnionNodes:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(ConsumerNode)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             # Should get one of the union values
             assert "Got" in result.unwrap().value

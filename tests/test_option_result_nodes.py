@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import EventLoopAgent, Node, NodeError, Scope, scalar_node
@@ -18,8 +18,8 @@ class TestOptionNodes:
         @scalar_node
         class ConsumerNode:
             @classmethod
-            def __compose__(cls, opt: fntypes.Option[SuccessNode]) -> str:
-                assert fntypes.is_some(opt)
+            def __compose__(cls, opt: kungfu.Option[SuccessNode]) -> str:
+                assert kungfu.is_some(opt)
                 return f"Got value: {opt.unwrap()}"
 
         agent = EventLoopAgent.build({ConsumerNode})
@@ -28,7 +28,7 @@ class TestOptionNodes:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(ConsumerNode)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == "Got value: 42"
 
     @pytest.mark.asyncio
@@ -42,8 +42,8 @@ class TestOptionNodes:
         @scalar_node
         class ConsumerNode:
             @classmethod
-            def __compose__(cls, opt: fntypes.Option[FailingNode]) -> str:
-                assert fntypes.is_nothing(opt)
+            def __compose__(cls, opt: kungfu.Option[FailingNode]) -> str:
+                assert kungfu.is_nothing(opt)
                 return "No value"
 
         agent = EventLoopAgent.build({ConsumerNode})
@@ -52,7 +52,7 @@ class TestOptionNodes:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(ConsumerNode)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == "No value"
 
 
@@ -68,8 +68,8 @@ class TestResultNodes:
         @scalar_node
         class ConsumerNode:
             @classmethod
-            def __compose__(cls, res: fntypes.Result[SuccessNode, Exception]) -> str:
-                assert fntypes.is_ok(res)
+            def __compose__(cls, res: kungfu.Result[SuccessNode, Exception]) -> str:
+                assert kungfu.is_ok(res)
                 return f"Success: {res.unwrap()}"
 
         agent = EventLoopAgent.build({ConsumerNode})
@@ -78,7 +78,7 @@ class TestResultNodes:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(ConsumerNode)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == "Success: 123"
 
     @pytest.mark.asyncio
@@ -92,8 +92,8 @@ class TestResultNodes:
         @scalar_node
         class ConsumerNode:
             @classmethod
-            def __compose__(cls, res: fntypes.Result[FailingNode, Exception]) -> str:
-                assert fntypes.is_err(res)
+            def __compose__(cls, res: kungfu.Result[FailingNode, Exception]) -> str:
+                assert kungfu.is_err(res)
                 return f"Error: {type(res.error).__name__}"
 
         agent = EventLoopAgent.build({ConsumerNode})
@@ -102,7 +102,7 @@ class TestResultNodes:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(ConsumerNode)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert "Error:" in result.unwrap().value
 
 
@@ -114,7 +114,7 @@ class TestNodeCreation:
 
         TestNode.__type__ = TestNode
 
-        option_type = fntypes.Option[TestNode]
+        option_type = kungfu.Option[TestNode]
         option_node = create_option_node(option_type)
 
         assert issubclass(option_node, Node)
@@ -127,7 +127,7 @@ class TestNodeCreation:
 
         TestNode.__type__ = TestNode
 
-        result_type = fntypes.Result[TestNode, Exception]
+        result_type = kungfu.Result[TestNode, Exception]
         result_node = create_result_node(result_type)
 
         assert issubclass(result_node, Node)

@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod.utils.generator import generator_asend, generator_send
@@ -12,7 +12,7 @@ class TestGeneratorUtils:
         gen = simple_generator()
 
         result = generator_send(gen)
-        assert fntypes.is_some(result)
+        assert kungfu.is_some(result)
         assert result.unwrap() == "first"
 
     def test_generator_send_exhausted(self):
@@ -23,7 +23,7 @@ class TestGeneratorUtils:
         gen = empty_generator()
 
         result = generator_send(gen)
-        assert fntypes.is_nothing(result)
+        assert kungfu.is_nothing(result)
 
     @pytest.mark.asyncio
     async def test_generator_asend_with_value(self):
@@ -33,7 +33,7 @@ class TestGeneratorUtils:
         gen = simple_async_generator()
 
         result = await generator_asend(gen)
-        assert fntypes.is_some(result)
+        assert kungfu.is_some(result)
         assert result.unwrap() == "first"
 
     @pytest.mark.asyncio
@@ -45,4 +45,4 @@ class TestGeneratorUtils:
         gen = empty_async_generator()
 
         result = await generator_asend(gen)
-        assert fntypes.is_nothing(result)
+        assert kungfu.is_nothing(result)

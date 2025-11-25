@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import EventLoopAgent, Scope, Value, scalar_node
@@ -26,7 +26,7 @@ class TestInjection:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(Service)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == "Service used: result from db"
 
     @pytest.mark.asyncio
@@ -56,7 +56,7 @@ class TestInjection:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(Application)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == "LOG: App started with production"
 
     @pytest.mark.asyncio
@@ -96,8 +96,8 @@ class TestInjection:
             user_result = user_scope.retrieve(UserService)
             admin_result = admin_scope.retrieve(AdminService)
 
-            assert fntypes.is_some(user_result)
-            assert fntypes.is_some(admin_result)
+            assert kungfu.is_some(user_result)
+            assert kungfu.is_some(admin_result)
 
             assert user_result.unwrap().value == "Users from user_db"
             # AdminService should use user_db since it inherits from user_scope

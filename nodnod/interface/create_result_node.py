@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 
 import typing
 from functools import cache
@@ -11,13 +11,13 @@ if typing.TYPE_CHECKING:
 
 
 @cache
-def create_result_node[T, Err: Exception](result: type[fntypes.Result[T, Err]]) -> type["ResultNode[T, Err]"]:
+def create_result_node[T, Err: Exception](result: type[kungfu.Result[T, Err]]) -> type["ResultNode[T, Err]"]:
    from nodnod.interface.result_node import ResultNode
 
    args = typing.get_args(result)
    if not args:
       raise NodeBuildError("Result must have specified type arguments")
-   
+
    node_cls = args[0]
    error_cls = args[1]
 
@@ -27,8 +27,8 @@ def create_result_node[T, Err: Exception](result: type[fntypes.Result[T, Err]]) 
       bases=(),
       namespace=dict(
          __type__=result,
-         __from_node__=node_cls, 
-         __error__=error_cls, 
+         __from_node__=node_cls,
+         __error__=error_cls,
          __module__=__name__,
       ),
    )

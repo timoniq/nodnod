@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import Node, NodeError, Scope, Value, scalar_node
@@ -17,7 +17,7 @@ class TestCompose:
         scope = Scope(detail="test")
         result = await compose_node(SimpleNode, scope, scope)
 
-        assert fntypes.is_ok(result)
+        assert kungfu.is_ok(result)
         value = result.unwrap()
         assert value.value == 42
 
@@ -32,7 +32,7 @@ class TestCompose:
         scope = Scope(detail="test")
         result = await compose_node(ErrorNode, scope, scope)
 
-        assert fntypes.is_err(result)
+        assert kungfu.is_err(result)
         assert isinstance(result.error, NodeError)
 
     @pytest.mark.asyncio
@@ -49,7 +49,7 @@ class TestCompose:
 
         result = await compose_node(CachedNode, scope, scope)
 
-        assert fntypes.is_ok(result)
+        assert kungfu.is_ok(result)
         # Should return cached value, not newly computed
         assert result.unwrap().value == 123
 

@@ -1,10 +1,10 @@
 from nodnod.node import Node
 from nodnod.compose import ComposeResponse
-import fntypes
+import kungfu
 import typing
 
 
-class Either(Node[fntypes.Variative], abstract=True):
+class Either(Node[kungfu.Sum], abstract=True):
     is_concurrent: bool
     is_scalar: bool = False
 
@@ -12,18 +12,18 @@ class Either(Node[fntypes.Variative], abstract=True):
 
     def __init__(self, value: typing.Any):
         self.value = value
-    
+
     @classmethod
-    def __compose__(cls, node: fntypes.Variative):
+    def __compose__(cls, node: kungfu.Sum):
         if cls.is_scalar:
             return node.v.value
         return cls(node.v.value)
-    
+
     @classmethod
     def __initialize__(cls, nodes: set[Node]) -> ComposeResponse:
         node = nodes.copy().pop()
-        return cls.__compose__(fntypes.Variative(node))
-    
+        return cls.__compose__(kungfu.Sum(node))
+
     def __init_subclass__(cls, abstract: bool = False) -> None:
         if not abstract:
             if cls.is_concurrent:

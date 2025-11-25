@@ -8,7 +8,7 @@ from nodnod.scope import Scope, validate_local_scope_is_linked_to_node_scopes
 from nodnod.error import NodeError
 from nodnod.value import Value
 import asyncio
-import fntypes
+import kungfu
 
 
 def build_steps(nodes: set[type[Node]]) -> list[Step]:
@@ -22,7 +22,7 @@ def build_steps(nodes: set[type[Node]]) -> list[Step]:
             steps.append(Single(StepType.SINGLE, parallel.pop()))
         else:
             steps.append(Parallel(StepType.PARALLEL, parallel))
-    
+
     return steps
 
 
@@ -37,18 +37,18 @@ class LayerAgent(Agent):
         return cls(steps=build_steps(nodes))
 
     async def run(
-        self, 
-        local_scope: Scope, 
+        self,
+        local_scope: Scope,
         mapped_scopes: dict[type[Node], Scope],
     ):
         from nodnod.compose import compose_node
 
         validate_local_scope_is_linked_to_node_scopes(local_scope, mapped_scopes)
-        initiations = dict[type[Node], fntypes.Result[Value[type[Node]], NodeError]]()
+        initiations = dict[type[Node], kungfu.Result[Value[type[Node]], NodeError]]()
 
         for step in self.steps:
             match step:
-                
+
                 case Parallel(nodes=nodes):
                     coros = [
                         compose_node(node, mapped_scopes.get(node, local_scope), local_scope)
@@ -60,9 +60,9 @@ class LayerAgent(Agent):
                         result = results[i]
                         if isinstance(result, Exception):
                             raise NodeError("Exception occured", result)
-                        
+
                         initiations[node] = result  # type: ignore
-                
+
                 case Single(node=node):
                     result = await compose_node(node, mapped_scopes.get(node, local_scope), local_scope)
                     initiations[node] = result

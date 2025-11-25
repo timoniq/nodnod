@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import EventLoopAgent, Scope, scalar_node
@@ -20,5 +20,5 @@ class TestEventLoopAgentExtended:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(TestNode)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == 42

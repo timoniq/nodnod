@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import EventLoopAgent, Scope, scalar_node
@@ -23,7 +23,7 @@ class TestEitherExtended:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(CustomEither)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             # Should get the Either instance, not the scalar value
             assert hasattr(result.unwrap().value, "value")
 

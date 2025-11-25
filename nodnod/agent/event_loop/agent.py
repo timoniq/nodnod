@@ -7,12 +7,12 @@ from nodnod.agent.event_loop.coroutine import compose_coroutine, dependency_sequ
 from nodnod.builder.build_queue import traverse_all
 import asyncio
 import typing
-import fntypes
+import kungfu
 
 
 class EventLoopAgent(Agent):
     def __init__(
-        self, 
+        self,
         traversed_nodes: "Queue",
         final_nodes: typing.Iterable[type[Node]] | None = None,
     ) -> None:
@@ -22,14 +22,14 @@ class EventLoopAgent(Agent):
     @classmethod
     def build(cls, nodes: set[type[Node]]) -> typing.Self:
         return cls(traversed_nodes=traverse_all(nodes), final_nodes=nodes)
-    
+
     def push_futures(
-        self, 
-        local_scope: Scope, 
-        mapped_scopes: dict[type[Node], Scope], 
+        self,
+        local_scope: Scope,
+        mapped_scopes: dict[type[Node], Scope],
         futures: dict[type[Node], asyncio.Future],
     ) -> None:
-        
+
         for node in self.traversed_nodes:
 
             if node in futures:
@@ -38,7 +38,7 @@ class EventLoopAgent(Agent):
             if issubclass(node, Either):
 
                 if node.is_concurrent:
-                
+
                     dependencies = [
                         futures[dependency] for dependency in node.__dependencies__
                     ]
@@ -48,9 +48,9 @@ class EventLoopAgent(Agent):
                             dependencies,
                         )
                     )
-                
+
                 else:
-                    
+
                     first_dependency_node = node.__either__[0]
                     first_dependency_future = futures[first_dependency_node]
 
@@ -64,8 +64,8 @@ class EventLoopAgent(Agent):
                             pusher=lambda _futures, _node: (
                                 self.__class__(getattr(_node, "__traverse__"))
                                 .push_futures(
-                                    local_scope, 
-                                    mapped_scopes, 
+                                    local_scope,
+                                    mapped_scopes,
                                     _futures,
                                 )
                             ),
@@ -91,7 +91,7 @@ class EventLoopAgent(Agent):
                         futures[node.__from_node__],
                     )
                 )
-            
+
             else:
 
                 dependencies = [
@@ -99,15 +99,15 @@ class EventLoopAgent(Agent):
                 ]
                 task = asyncio.Task(
                     compose_coroutine(
-                        node, 
-                        mapped_scopes.get(node, local_scope), 
+                        node,
+                        mapped_scopes.get(node, local_scope),
                         local_scope,
                         dependencies,
                     )
                 )
-            
+
             futures[node] = task
-    
+
     async def run(
         self,
         local_scope: Scope,
@@ -125,12 +125,12 @@ class EventLoopAgent(Agent):
         # Push all network into loop
         for future in futures.values():
             asyncio.ensure_future(future)
-        
+
         final_futures = {futures[node] for node in self.final_nodes}
-        
+
         results = await asyncio.gather(*final_futures)
         for result in results:
-            if fntypes.is_err(result):
+            if kungfu.is_err(result):
                 raise result.error
 
 

@@ -1,6 +1,6 @@
 import typing
 
-import fntypes
+import kungfu
 
 from nodnod.interface.either import Either
 from nodnod.node import ComposeResponse, Node
@@ -34,7 +34,7 @@ class PolymorphicNode[T](Either, abstract=True):
     is_scalar = False
 
     @classmethod
-    def __compose__(cls, node: fntypes.Variative) -> T:
+    def __compose__(cls, node: kungfu.Sum) -> T:
         if cls.is_scalar:
             return node.v.value
         return node.v

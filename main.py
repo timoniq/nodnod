@@ -2,7 +2,7 @@ import asyncio
 import dataclasses
 import typing
 
-import fntypes
+import kungfu
 
 from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, Value, case, polymorphic, scalar_node
 from nodnod.interface.either import ConcurrentEither, SequentialEither
@@ -67,7 +67,7 @@ class MyInt:
     @case
     def from_a(cls, a: A) -> int:
         return a + 8
-    
+
     @case
     def from_b(cls, b: B) -> int:
         return b
@@ -102,12 +102,12 @@ class MyNode(Node):
 class LOL:
     @classmethod
     def __compose__(
-        cls, 
-        x: Lol, 
-        mi: MyInt, 
-        opt: fntypes.Option[A], 
-        mn: MyNode, 
-        ar: fntypes.Result[Bitchnode, Exception],
+        cls,
+        x: Lol,
+        mi: MyInt,
+        opt: kungfu.Option[A],
+        mn: MyNode,
+        ar: kungfu.Result[Bitchnode, Exception],
     ) -> str:
         return x.upper() * mi + "d" * mn.bro
 
@@ -120,7 +120,7 @@ async def main():
 
     async with global_scope.create_child("local") as scope:
         await agent.run(
-            local_scope=scope, 
+            local_scope=scope,
             mapped_scopes={A: global_scope},
         )
         print(prepare_values(scope.merge()))

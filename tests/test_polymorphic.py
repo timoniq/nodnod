@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import EventLoopAgent, Scope, scalar_node
@@ -27,7 +27,7 @@ class TestPolymorphic:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(StringConverter)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == "Number: 42"
 
     @pytest.mark.asyncio
@@ -52,7 +52,7 @@ class TestPolymorphic:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(MultiConverter)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             # Should use the string case since StringSource is available
             assert result.unwrap().value == "HELLO"
 
@@ -85,5 +85,5 @@ class TestComplexPolymorphic:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(Calculator)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == 50

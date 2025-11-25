@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import EventLoopAgent, Scope, scalar_node
@@ -14,7 +14,7 @@ class TestResultNodeExtended:
             def __compose__(cls) -> int:
                 raise BaseException("System exit error")
 
-        result_type = fntypes.Result[FailingNode, BaseException]
+        result_type = kungfu.Result[FailingNode, BaseException]
         result_node_class = create_result_node(result_type)
 
         agent = EventLoopAgent.build({result_node_class})
@@ -23,10 +23,10 @@ class TestResultNodeExtended:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(result_node_class)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
 
             result_value = result.unwrap().value
-            assert fntypes.is_err(result_value)
+            assert kungfu.is_err(result_value)
             assert isinstance(result_value.error, BaseException)
 
     @pytest.mark.asyncio
@@ -37,7 +37,7 @@ class TestResultNodeExtended:
             def __compose__(cls) -> int:
                 return 123
 
-        result_type = fntypes.Result[SuccessNode, Exception]
+        result_type = kungfu.Result[SuccessNode, Exception]
         result_node_class = create_result_node(result_type)
 
         agent = EventLoopAgent.build({result_node_class})
@@ -46,8 +46,8 @@ class TestResultNodeExtended:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(result_node_class)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
 
             result_value = result.unwrap().value
-            assert fntypes.is_ok(result_value)
+            assert kungfu.is_ok(result_value)
             assert result_value.unwrap() == 123

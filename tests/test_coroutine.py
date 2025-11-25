@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 
-import fntypes
+import kungfu
 import pytest
 
 from nodnod.agent.event_loop.coroutine import (
@@ -51,11 +51,11 @@ async def test_compose_coroutine_success():
     local_scope = Scope()
 
     successful_future = asyncio.Future()
-    successful_future.set_result(fntypes.Ok(Value(int, 42)))
+    successful_future.set_result(kungfu.Ok(Value(int, 42)))
 
     result = await compose_coroutine(TestNode, node_scope, local_scope, [successful_future])
 
-    assert fntypes.is_ok(result)
+    assert kungfu.is_ok(result)
 
 
 @pytest.mark.asyncio
@@ -64,11 +64,11 @@ async def test_compose_coroutine_dependency_error():
     local_scope = Scope()
 
     error_future = asyncio.Future()
-    error_future.set_result(fntypes.Error(NodeError("dependency error")))
+    error_future.set_result(kungfu.Error(NodeError("dependency error")))
 
     result = await compose_coroutine(TestNode, node_scope, local_scope, [error_future])
 
-    assert fntypes.is_err(result)
+    assert kungfu.is_err(result)
     assert "could not resolve dependencies" in str(result.error)
 
 
@@ -81,7 +81,7 @@ async def test_result_node_compose_coroutine_exception():
 
     result = await result_node_compose_coroutine(TestResultNode, node_scope, exception_future)
 
-    assert fntypes.is_ok(result)
+    assert kungfu.is_ok(result)
     assert TestResultNode in node_scope
 
 
@@ -101,7 +101,7 @@ async def test_result_node_compose_coroutine_error_result():
     node_scope = Scope()
 
     error_future = asyncio.Future()
-    error_future.set_result(fntypes.Error(NodeError("test error")))
+    error_future.set_result(kungfu.Error(NodeError("test error")))
 
     class ValueErrorHandlingResultNode(ResultNode):
         __from_node__ = TestNode
@@ -110,7 +110,7 @@ async def test_result_node_compose_coroutine_error_result():
 
     result = await result_node_compose_coroutine(ValueErrorHandlingResultNode, node_scope, error_future)
 
-    assert fntypes.is_ok(result)
+    assert kungfu.is_ok(result)
     assert ValueErrorHandlingResultNode in node_scope
 
 
@@ -119,7 +119,7 @@ async def test_result_node_compose_coroutine_error_not_handled():
     node_scope = Scope()
 
     error_future = asyncio.Future()
-    error_future.set_result(fntypes.Error(NodeError("test error")))
+    error_future.set_result(kungfu.Error(NodeError("test error")))
 
     with pytest.raises(NodeError):
         await result_node_compose_coroutine(NonHandlingResultNode, node_scope, error_future)
@@ -128,7 +128,7 @@ async def test_result_node_compose_coroutine_error_not_handled():
 @pytest.mark.asyncio
 async def test_dependency_sequential_either_coroutine_first_success():
     first_future = asyncio.Future()
-    first_future.set_result(fntypes.Ok(Value(int, 42)))
+    first_future.set_result(kungfu.Ok(Value(int, 42)))
 
     first_dependency = (TestNode, first_future)
     other_dependencies = ()
@@ -141,16 +141,16 @@ async def test_dependency_sequential_either_coroutine_first_success():
         first_dependency, other_dependencies, futures, pusher, mapped_scopes, local_scope
     )
 
-    assert fntypes.is_ok(result)
+    assert kungfu.is_ok(result)
 
 
 @pytest.mark.asyncio
 async def test_dependency_sequential_either_coroutine_existing_future():
     first_future = asyncio.Future()
-    first_future.set_result(fntypes.Error(NodeError("first failed")))
+    first_future.set_result(kungfu.Error(NodeError("first failed")))
 
     second_future = asyncio.Future()
-    second_future.set_result(fntypes.Ok(Value(str, "success")))
+    second_future.set_result(kungfu.Ok(Value(str, "success")))
 
     first_dependency = (TestNode, first_future)
     other_dependencies = (ErrorNode,)
@@ -163,13 +163,13 @@ async def test_dependency_sequential_either_coroutine_existing_future():
         first_dependency, other_dependencies, futures, pusher, mapped_scopes, local_scope
     )
 
-    assert fntypes.is_ok(result)
+    assert kungfu.is_ok(result)
 
 
 @pytest.mark.asyncio
 async def test_dependency_sequential_either_coroutine_all_fail():
     first_future = asyncio.Future()
-    first_future.set_result(fntypes.Error(NodeError("first failed")))
+    first_future.set_result(kungfu.Error(NodeError("first failed")))
 
     first_dependency = (TestNode, first_future)
     other_dependencies = (ErrorNode,)
@@ -177,7 +177,7 @@ async def test_dependency_sequential_either_coroutine_all_fail():
 
     def mock_pusher(f, n):
         new_future = asyncio.Future()
-        new_future.set_result(fntypes.Error(NodeError("pushed failed")))
+        new_future.set_result(kungfu.Error(NodeError("pushed failed")))
         f[n] = new_future
 
     mapped_scopes = {}
@@ -187,31 +187,31 @@ async def test_dependency_sequential_either_coroutine_all_fail():
         first_dependency, other_dependencies, futures, mock_pusher, mapped_scopes, local_scope
     )
 
-    assert fntypes.is_err(result)
+    assert kungfu.is_err(result)
     assert "no option found for either" in str(result.error)
 
 
 @pytest.mark.asyncio
 async def test_dependency_concurrent_either_coroutine_success():
     success_future = asyncio.Future()
-    success_future.set_result(fntypes.Ok(Value(int, 42)))
+    success_future.set_result(kungfu.Ok(Value(int, 42)))
 
     result = await dependency_concurrent_either_corountine([success_future])
 
-    assert fntypes.is_ok(result)
+    assert kungfu.is_ok(result)
 
 
 @pytest.mark.asyncio
 async def test_dependency_concurrent_either_coroutine_all_fail():
     fail_future1 = asyncio.Future()
-    fail_future1.set_result(fntypes.Error(NodeError("failed 1")))
+    fail_future1.set_result(kungfu.Error(NodeError("failed 1")))
 
     fail_future2 = asyncio.Future()
-    fail_future2.set_result(fntypes.Error(NodeError("failed 2")))
+    fail_future2.set_result(kungfu.Error(NodeError("failed 2")))
 
     result = await dependency_concurrent_either_corountine([fail_future1, fail_future2])
 
-    assert fntypes.is_err(result)
+    assert kungfu.is_err(result)
     assert "no option found for either" in str(result.error)
 
 
@@ -220,7 +220,7 @@ async def test_result_node_compose_coroutine_error_handled():
     node_scope = Scope()
 
     error_future = asyncio.Future()
-    error_future.set_result(fntypes.Error(ValueError("test error")))
+    error_future.set_result(kungfu.Error(ValueError("test error")))
 
     class ValueErrorHandlingResultNode(ResultNode):
         __from_node__ = TestNode
@@ -229,19 +229,19 @@ async def test_result_node_compose_coroutine_error_handled():
 
     result = await result_node_compose_coroutine(ValueErrorHandlingResultNode, node_scope, error_future)
 
-    assert fntypes.is_ok(result)
+    assert kungfu.is_ok(result)
     assert ValueErrorHandlingResultNode in node_scope
     value = node_scope[ValueErrorHandlingResultNode]
-    assert fntypes.is_err(value.value)
+    assert kungfu.is_err(value.value)
 
 
 @pytest.mark.asyncio
 async def test_dependency_sequential_either_coroutine_existing_future_fails():
     first_future = asyncio.Future()
-    first_future.set_result(fntypes.Error(NodeError("first failed")))
+    first_future.set_result(kungfu.Error(NodeError("first failed")))
 
     existing_fail_future = asyncio.Future()
-    existing_fail_future.set_result(fntypes.Error(NodeError("existing failed")))
+    existing_fail_future.set_result(kungfu.Error(NodeError("existing failed")))
 
     first_dependency = (TestNode, first_future)
     other_dependencies = (ErrorNode,)
@@ -254,5 +254,5 @@ async def test_dependency_sequential_either_coroutine_existing_future_fails():
         first_dependency, other_dependencies, futures, pusher, mapped_scopes, local_scope
     )
 
-    assert fntypes.is_err(result)
+    assert kungfu.is_err(result)
     assert "no option found for either" in str(result.error)
