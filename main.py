@@ -5,6 +5,7 @@ import typing
 import kungfu
 
 from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, Value, case, polymorphic, scalar_node
+from nodnod.interface.cache import cache
 from nodnod.interface.either import ConcurrentEither, SequentialEither
 from nodnod.interface.generic import generic_node
 from nodnod.interface.polymorphic import case, polymorphic
@@ -22,9 +23,6 @@ class Lolik[T: (str, int), *Ts, X: str | int](DataNode, abstract=True):
     @classmethod
     async def __compose__(cls, t: type[T], y: type[X]) -> typing.Self:
         return cls(t("11"), y("22"))
-
-
-print(Lolik.__dict__)
 
 
 class Interface:
@@ -55,6 +53,16 @@ class B(Node[int]):
     @classmethod
     async def __compose__(cls):
         yield 5
+
+
+@cache(seconds=10)
+@scalar_node
+class D(Node[int]):
+    @classmethod
+    async def __compose__(cls):
+        print("composing d")  # every 10 seconds
+        yield 10
+        print("closing d")
 
 
 class AorB(SequentialEither):
@@ -106,14 +114,13 @@ class LOL:
         x: Lol,
         mi: MyInt,
         opt: kungfu.Option[A],
-        mn: MyNode,
         ar: kungfu.Result[Bitchnode, Exception],
     ) -> str:
-        return x.upper() * mi + "d" * mn.bro
+        return x.upper() * mi + "d"
 
 
 async def main():
-    agent = EventLoopAgent.build({LOL, C, MyNode, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
+    agent = EventLoopAgent.build({LOL, C, D, D, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
 
     global_scope = Scope(detail="global")
     global_scope.push(Value(Interface, MyInterface()))
