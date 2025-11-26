@@ -255,4 +255,4 @@ class TestCache:
                 return 42  # pragma: no cover
 
         assert issubclass(TestNode, Node)
-        assert TestNode.__name__ == "Node:TestNode"
+        assert TestNode.__name__ == "CachedNode:TestNode"

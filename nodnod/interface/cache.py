@@ -22,7 +22,7 @@ class cache(timedelta):
             raise RuntimeError("cache time must be greater than 0")
 
         return create_node(  # type: ignore
-            name=f"Node:{composable.__name__}",
+            name=f"CachedNode:{composable.__name__}",
             base_node=create_node_from_composable(composable),  # type: ignore
             bases=(),
             namespace=dict(
