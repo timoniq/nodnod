@@ -2,9 +2,10 @@ import asyncio
 import dataclasses
 import typing
 
-import fntypes
+import kungfu
 
 from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, Value, case, polymorphic, scalar_node
+from nodnod.interface.cache import cache
 from nodnod.interface.either import ConcurrentEither, SequentialEither
 from nodnod.interface.generic import generic_node
 from nodnod.interface.polymorphic import case, polymorphic
@@ -22,9 +23,6 @@ class Lolik[T: (str, int), *Ts, X: str | int](DataNode, abstract=True):
     @classmethod
     async def __compose__(cls, t: type[T], y: type[X]) -> typing.Self:
         return cls(t("11"), y("22"))
-
-
-print(Lolik.__dict__)
 
 
 class Interface:
@@ -57,6 +55,16 @@ class B(Node[int]):
         yield 5
 
 
+@cache(seconds=10)
+@scalar_node
+class D(Node[int]):
+    @classmethod
+    async def __compose__(cls):
+        print("composing d")  # every 10 seconds
+        yield 10
+        print("closing d")
+
+
 class AorB(SequentialEither):
     __either__ = (A, B)
 
@@ -67,7 +75,7 @@ class MyInt:
     @case
     def from_a(cls, a: A) -> int:
         return a + 8
-    
+
     @case
     def from_b(cls, b: B) -> int:
         return b
@@ -102,25 +110,24 @@ class MyNode(Node):
 class LOL:
     @classmethod
     def __compose__(
-        cls, 
-        x: Lol, 
-        mi: MyInt, 
-        opt: fntypes.Option[A], 
-        mn: MyNode, 
-        ar: fntypes.Result[Bitchnode, Exception],
+        cls,
+        x: Lol,
+        mi: MyInt,
+        opt: kungfu.Option[A],
+        ar: kungfu.Result[Bitchnode, Exception],
     ) -> str:
-        return x.upper() * mi + "d" * mn.bro
+        return x.upper() * mi + "d"
 
 
 async def main():
-    agent = EventLoopAgent.build({LOL, C, MyNode, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
+    agent = EventLoopAgent.build({LOL, C, D, D, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
 
     global_scope = Scope(detail="global")
     global_scope.push(Value(Interface, MyInterface()))
 
     async with global_scope.create_child("local") as scope:
         await agent.run(
-            local_scope=scope, 
+            local_scope=scope,
             mapped_scopes={A: global_scope},
         )
         print(prepare_values(scope.merge()))

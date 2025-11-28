@@ -1,4 +1,11 @@
 import typing
+import inspect
+
+
+async def maybe_awaitable[T](value: T | typing.Awaitable[T], /) -> T:
+    if inspect.isawaitable(value):
+        return await value
+    return value
 
 
 class awaitable_noop:
@@ -6,4 +13,4 @@ class awaitable_noop:
         return iter(())  # type: ignore
 
 
-__all__ = ("awaitable_noop",)
+__all__ = ("awaitable_noop", "maybe_awaitable")

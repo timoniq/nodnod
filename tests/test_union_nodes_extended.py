@@ -1,6 +1,6 @@
 import typing
 
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import Node
@@ -44,7 +44,7 @@ class TestUnionNodesExtended:
 
         TestNode.__type__ = TestNode
         # Union with Option type
-        option_union = typing.Union[fntypes.Option[TestNode], int]
+        option_union = typing.Union[kungfu.Option[TestNode], int]
         union_node = create_union_node(option_union)
 
         assert issubclass(union_node, Node)

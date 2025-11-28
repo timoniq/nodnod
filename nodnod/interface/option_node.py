@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 from functools import cache
 
-from fntypes import Nothing, Option, Some
+from kungfu import Nothing, Option, Some
 
 from nodnod.error import NodeBuildError
 from nodnod.interface.is_node import is_node

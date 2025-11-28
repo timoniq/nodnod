@@ -1,7 +1,7 @@
 import collections
 import typing
 
-import fntypes
+import kungfu
 
 from nodnod.error import NodeBuildError
 from nodnod.utils.call import call_with_context
@@ -17,7 +17,7 @@ type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
 type Queue = list[type[Node]]
 
 type Injection[T] = typing.Annotated[T, ...]
-type InjectionHook = typing.Callable[["type[Node]", str, type[typing.Any]], fntypes.Pulse[str]]
+type InjectionHook = typing.Callable[["type[Node]", str, type[typing.Any]], kungfu.Pulse[str]]
 
 FORWARD_REF_REQUESTS = collections.defaultdict(list["type[Node]"])
 INITIALIZED_FORWARD_REFS = {}
@@ -28,7 +28,7 @@ def dummy_compose[Cls](cls: type[Cls]) -> Cls:
     raise RuntimeError(f"`{cls.__name__}` does not provide `__compose__`. Maybe it should be abstract=True?")
 
 
-class Node[T = typing.Any, Root = typing.Any]:    
+class Node[T = typing.Any, Root = typing.Any]:
     __type__: typing.Any = None  # type: ignore
     __dependencies__: set[type["Node"]] = None  # type: ignore
     __injections__: set[typing.Any] = None  # type: ignore
@@ -37,7 +37,7 @@ class Node[T = typing.Any, Root = typing.Any]:
     __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
 
     def __init_subclass__(
-        cls, 
+        cls,
         abstract: bool = False,
         injection_hooks: tuple[InjectionHook, ...] = (),
     ) -> None:
@@ -79,15 +79,15 @@ class Node[T = typing.Any, Root = typing.Any]:
                     dependency_nodes.add(create_node_from_composable(all_args[dep_name]))
                 elif is_union(dep_type):
                     dependency_nodes.add(create_union_node(dep_type))
-                elif is_type(dep_type, fntypes.Option):
+                elif is_type(dep_type, kungfu.Option):
                     dependency_nodes.add(create_option_node(dep_type))
-                elif is_type(dep_type, fntypes.Result):
+                elif is_type(dep_type, kungfu.Result):
                     dependency_nodes.add(create_result_node(dep_type))
                 elif is_type(dep_type, type):
                     args = typing.get_args(dep_type)
                     if not args:
                         raise NodeBuildError(f"Expected `type` with type argument, got `{dep_type!r}`.")
-                    
+
                     if is_type(type(args[0]), typing.TypeVar):
                         type_arg_node = create_type_arg_node(cls, args[0], dep_type)
                     else:
@@ -100,7 +100,7 @@ class Node[T = typing.Any, Root = typing.Any]:
                         if hook(cls, dep_name, dep_type):
                             is_processed_by_hook = True
                             break
-                    
+
                     if not is_processed_by_hook:
                         if is_type(dep_type, Injection):
                             dep_type = typing.get_args(dep_type)[0]
@@ -117,12 +117,12 @@ class Node[T = typing.Any, Root = typing.Any]:
                 kwargs_names_by_type = reverse_dict(all_args)
 
                 cls.__initialize__ = (
-                    fntypes.F[set["Value"]]()
+                    kungfu.F[set["Value"]]()
                     .then(
                         lambda values: (
                             {
-                                kwargs_names_by_type[value.cls]: value.unbox() 
-                                for value in values 
+                                kwargs_names_by_type[value.cls]: value.unbox()
+                                for value in values
                                 if value.cls in kwargs_names_by_type
                             }
                         ),
@@ -130,7 +130,7 @@ class Node[T = typing.Any, Root = typing.Any]:
                         lambda context: call_with_context(cls.__compose__, context),
                     )
                 )
-            
+
             if cls.__type__ is None:
                 cls.__type__ = cls
 
@@ -140,7 +140,7 @@ class Node[T = typing.Any, Root = typing.Any]:
             for request in FORWARD_REF_REQUESTS.pop(cls.__name__, []):
                 INITIALIZED_FORWARD_REFS[cls.__name__] = cls
                 request.__init_subclass__()
-    
+
     def __repr__(self) -> str:
         return f"<node `{type(self).__name__}`>"
 

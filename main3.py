@@ -2,7 +2,7 @@ from nodnod import scalar_node, NodeError, EventLoopAgent, Scope
 from nodnod.interface.node_from_function import create_agent_from_node, create_node_from_function, inject_externals, Externals
 from nodnod.interface.compose_one import compose_one
 import dataclasses
-import fntypes
+import kungfu
 import datetime
 import typing
 
@@ -10,7 +10,7 @@ import typing
 @dataclasses.dataclass
 class User:
     id: int
-    email: fntypes.Option[str]
+    email: kungfu.Option[str]
     last_active: datetime.datetime
 
 
@@ -26,7 +26,7 @@ class Email(str):
     def validate_email(self):
         if "@" not in self:
             raise NodeError("Email is in wrong format")
-    
+
     @classmethod
     def __compose__(cls, user: User) -> str:
         email = cls(user.email.expect(NodeError("User has no email")))
@@ -37,7 +37,7 @@ class Email(str):
 @dataclasses.dataclass
 class UserSource:
     user: User
-    
+
     @classmethod
     def __compose__(cls, user: User) -> typing.Self:
         return cls(user)
@@ -70,7 +70,7 @@ async def main():
     handler_node = create_node_from_function(handler)
     agent = create_agent_from_node(handler_node, EventLoopAgent)
 
-    user = User(1, fntypes.Some("lol@skibidi.org"), datetime.datetime.now())
+    user = User(1, kungfu.Some("lol@skibidi.org"), datetime.datetime.now())
 
     # Run time
     async with Scope() as scope:
@@ -78,11 +78,11 @@ async def main():
         inject_externals(scope, {"boba": "ahah", "lol": "omg"})
         await agent.run(scope, {})
 
-    
+
     print(
         await compose_one(
-            SinceActive, 
-            {User: User(2, fntypes.Nothing(), datetime.datetime.now())},
+            SinceActive,
+            {User: User(2, kungfu.Nothing(), datetime.datetime.now())},
         )
     )
 

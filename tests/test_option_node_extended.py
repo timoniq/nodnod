@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import Node, scalar_node
@@ -11,12 +11,12 @@ class TestOptionNodeExtended:
         # Create an Option with no type args to test error case
         with pytest.raises(NodeBuildError, match="Option must have exactly one type argument"):
             # This would be an invalid Option type, but we simulate it
-            empty_option = fntypes.Option  # Raw Option without type argument
+            empty_option = kungfu.Option  # Raw Option without type argument
             create_option_node(empty_option)
 
     def test_create_option_node_with_non_node_type(self):
         # Option with non-node type (should be injected)
-        option_type = fntypes.Option[int]
+        option_type = kungfu.Option[int]
         option_node = create_option_node(option_type)
 
         some_node = option_node.__either__[0]
@@ -31,7 +31,7 @@ class TestOptionNodeExtended:
 
         TestNode.__type__ = TestNode
 
-        option_type = fntypes.Option[TestNode]
+        option_type = kungfu.Option[TestNode]
         option_node = create_option_node(option_type)
 
         assert issubclass(option_node, Node)

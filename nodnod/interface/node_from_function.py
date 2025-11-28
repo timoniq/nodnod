@@ -6,18 +6,18 @@ from nodnod.scope import Scope
 from nodnod.utils.create_node import create_node
 from nodnod.utils.resolve_signature import resolve_signature
 from nodnod.utils.misc import reverse_dict
-import fntypes
+import kungfu
 
 
-def collect_externals_hook(node: type[Node], dep_name: str, dep_type: type[typing.Any]) -> fntypes.Pulse[str]:
+def collect_externals_hook(node: type[Node], dep_name: str, dep_type: type[typing.Any]) -> kungfu.Pulse[str]:
     if is_type(dep_type, Injection):
-        return fntypes.Error("Injection is internal")
-    
+        return kungfu.Error("Injection is internal")
+
     if not hasattr(node, "__externals__"):
         setattr(node, "__externals__", [])
-    
+
     getattr(node, "__externals__").append(dep_name)
-    return fntypes.Ok()
+    return kungfu.Ok()
 
 
 class Externals(dict[str, typing.Any]):
@@ -37,16 +37,16 @@ def initialize_node_with_externals(cls, values: set[Value[typing.Any]]) -> typin
             externals_value = value.value
         else:
             compose_kwargs[names[value.cls]] = value.value
-    
+
     for external_name in externals:
         if external_name in externals:
             compose_kwargs[external_name] = externals_value[external_name]
-    
+
     return cls.__compose__(**compose_kwargs)
 
 
 def create_node_from_function(
-    func: typing.Callable[..., typing.Any], 
+    func: typing.Callable[..., typing.Any],
 ) -> type[Node]:
     node = create_node(
         f"Node:{func.__name__}",
@@ -74,7 +74,7 @@ def create_agent_from_node[T: Agent](node: type[Node], agent_cls: type[T] = Even
 
 
 def inject_externals(
-    scope: Scope, 
+    scope: Scope,
     externals: dict[str, typing.Any],
 ) -> None:
     scope.inject(Externals, Externals(externals))

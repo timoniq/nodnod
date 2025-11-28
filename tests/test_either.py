@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import EventLoopAgent, NodeError, Scope, scalar_node
@@ -30,7 +30,7 @@ class TestSequentialEither:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(TestEither)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == 42
 
     @pytest.mark.asyncio
@@ -57,7 +57,7 @@ class TestSequentialEither:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(TestEither)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == 99
 
 
@@ -86,6 +86,6 @@ class TestConcurrentEither:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(TestEither)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             # Should get the fast result
             assert result.unwrap().value in (100, 200)

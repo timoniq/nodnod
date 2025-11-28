@@ -1,8 +1,8 @@
 from nodnod.node import Node
-import fntypes
+import kungfu
 
 
-class ResultNode[T, Err: Exception](Node[fntypes.Result[T, Err]]):
+class ResultNode[T, Err: Exception](Node[kungfu.Result[T, Err]]):
    __from_node__: type[Node]
    __error__: type[Err] | tuple[type[Err], ...]
 
@@ -13,13 +13,13 @@ class ResultNode[T, Err: Exception](Node[fntypes.Result[T, Err]]):
          cls.__type__ = cls.__type__ or cls
 
    @classmethod
-   def __compose__(cls, err: BaseException) -> fntypes.Pulse[BaseException]:
+   def __compose__(cls, err: BaseException) -> kungfu.Pulse[BaseException]:
       try:
          raise err
       except cls.__error__:
-         return fntypes.Ok()
+         return kungfu.Ok()
       except BaseException as e:
-         return fntypes.Error(e)
+         return kungfu.Error(e)
 
 
 __all__ = ("ResultNode",)

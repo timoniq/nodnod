@@ -1,7 +1,7 @@
 import asyncio
 import dataclasses
 
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, scalar_node
@@ -63,7 +63,7 @@ class TestScope:
         scope.push(value)
 
         retrieved = scope.retrieve(int)
-        assert fntypes.is_some(retrieved)
+        assert kungfu.is_some(retrieved)
         assert retrieved.unwrap().value == 42
 
     def test_scope_hierarchy(self):
@@ -76,7 +76,7 @@ class TestScope:
         parent.push(parent_value)
 
         retrieved = child.retrieve(str)
-        assert fntypes.is_some(retrieved)
+        assert kungfu.is_some(retrieved)
         assert retrieved.unwrap().value == "parent_value"
 
     def test_scope_has_parent(self):
@@ -113,7 +113,7 @@ class TestEventLoopAgent:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(SimpleNode)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == 100
 
     @pytest.mark.asyncio
@@ -139,8 +139,8 @@ class TestEventLoopAgent:
             result_a = scope.retrieve(NodeA)
             result_b = scope.retrieve(NodeB)
 
-            assert fntypes.is_some(result_a)
-            assert fntypes.is_some(result_b)
+            assert kungfu.is_some(result_a)
+            assert kungfu.is_some(result_b)
             assert result_a.unwrap().value == 10
             assert result_b.unwrap().value == 30
 
@@ -159,7 +159,7 @@ class TestEventLoopAgent:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(AsyncNode)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             assert result.unwrap().value == "async_result"
 
 

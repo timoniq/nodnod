@@ -1,4 +1,4 @@
-import fntypes
+import kungfu
 import pytest
 
 from nodnod import EventLoopAgent, Node, Scope, scalar_node
@@ -40,7 +40,7 @@ class TestPolymorphicExtended:
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(PolyConverter)
-            assert fntypes.is_some(result)
+            assert kungfu.is_some(result)
             # Should return the node instance, not the scalar value
             node_instance = result.unwrap().value
             assert hasattr(node_instance, "__class__")

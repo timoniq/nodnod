@@ -3,7 +3,7 @@ from nodnod.value import Value
 from nodnod.utils.aio import awaitable_noop
 from nodnod.error import NodeError
 import typing
-import fntypes
+import kungfu
 import asyncio
 import secrets
 from collections import OrderedDict
@@ -22,20 +22,20 @@ class Scope(OrderedDict[AnyType, Value]):
     def __repr__(self) -> str:
         return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {value!r}" for node_t, value in self.items() if value.value is not self) if self else "(empty)")
 
-    def retrieve(self, key: AnyType) -> fntypes.Option[Value]:
+    def retrieve(self, key: AnyType) -> kungfu.Option[Value]:
         if key not in self:
             if not self.prev:
-                return fntypes.Nothing()
+                return kungfu.Nothing()
             return self.prev.retrieve(key)
-        return fntypes.Some(self[key])
-    
+        return kungfu.Some(self[key])
+
     def push(self, value: Value):
         self[value.cls] = value
-    
+
     def close(self) -> typing.Awaitable[typing.Any]:
         if self.is_closed:
             raise RuntimeError("Scope has already been closed")
-        
+
         self.is_closed = True
         coros = []
 
@@ -44,12 +44,12 @@ class Scope(OrderedDict[AnyType, Value]):
             result = value.close()
             if not isinstance(result, awaitable_noop):
                 coros.append(result)
-        
+
         if not coros:
             return awaitable_noop()
-        
+
         return asyncio.gather(*coros)
-    
+
     def has_parent(self, parent: "Scope"):
         candidate = self.prev
         while candidate is not None:
@@ -57,10 +57,10 @@ class Scope(OrderedDict[AnyType, Value]):
                 return True
             candidate = candidate.prev
         return False
-    
+
     def create_child(self, detail: str | None = None) -> "Scope":
         return Scope(prev=self, detail=detail)
-    
+
     def __enter__(self):
         return self
 
@@ -82,7 +82,7 @@ class Scope(OrderedDict[AnyType, Value]):
             scope.update(part)
             part = part.prev
         return scope
-    
+
     def inject(self, t: AnyType, value: typing.Any) -> None:
         self[t] = Value(t, value)
 

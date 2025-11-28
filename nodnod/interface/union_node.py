@@ -4,7 +4,7 @@ import types
 import typing
 from functools import cache
 
-import fntypes
+import kungfu
 
 from nodnod.error import NodeBuildError
 from nodnod.interface.option_node import create_option_node
@@ -49,13 +49,13 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
         if arg in NONE_TYPES:
             is_optional = True
             continue
-        
+
         origin_arg = typing.get_origin(arg) or arg
 
         if is_node(origin_arg):
             either.append(arg)
-        elif origin_arg is fntypes.Option:
-            either.append(create_option_node(arg)) 
+        elif origin_arg is kungfu.Option:
+            either.append(create_option_node(arg))
         else:
             injected_types.add(arg)
 
