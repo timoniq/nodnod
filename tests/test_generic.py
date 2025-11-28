@@ -188,3 +188,109 @@ def test_multiple_generics_storage():
     assert generics[(int,)] is node1
     assert generics[(str,)] is node2
     assert generics[(float,)] is node3
+
+
+def test_prepare_generic_node_with_type_var_tuple_only():
+    class _ComposableWithTypeVarTuple(Composable[typing.Any]):
+        __type_params__ = (typing.TypeVarTuple("Ts"),)
+
+        def __compose__(self):
+            pass  # pragma: no cover
+
+    result = prepare_generic_node(_ComposableWithTypeVarTuple, (int, str, float))
+
+    assert issubclass(result, Node)
+    assert result.__name__ == "_ComposableWithTypeVarTuple[int, str, float]"
+    assert hasattr(result, "__type_args__")
+
+
+def test_prepare_generic_node_with_type_var_tuple_empty():
+    class _ComposableWithTypeVarTuple(Composable[typing.Any]):
+        __type_params__ = (typing.TypeVarTuple("Ts"),)
+
+        def __compose__(self):
+            pass  # pragma: no cover
+
+    result = prepare_generic_node(_ComposableWithTypeVarTuple, ())
+
+    assert issubclass(result, Node)
+    assert result.__name__ == "_ComposableWithTypeVarTuple[]"
+    assert hasattr(result, "__type_args__")
+
+
+def test_prepare_generic_node_with_type_var_and_type_var_tuple():
+    class _ComposableWithMixed(Composable[typing.Any]):
+        __type_params__ = (typing.TypeVar("T"), typing.TypeVarTuple("Ts"))
+
+        def __compose__(self):
+            pass  # pragma: no cover
+
+    result = prepare_generic_node(_ComposableWithMixed, (int, str, float, bool))
+
+    assert issubclass(result, Node)
+    assert result.__name__ == "_ComposableWithMixed[int, str, float, bool]"
+    assert hasattr(result, "__type_args__")
+
+
+def test_prepare_generic_node_with_type_var_tuple_and_type_var():
+    class _ComposableWithMixed(Composable[typing.Any]):
+        __type_params__ = (typing.TypeVarTuple("Ts"), typing.TypeVar("U"))
+
+        def __compose__(self):
+            pass  # pragma: no cover
+
+    result = prepare_generic_node(_ComposableWithMixed, (int, str, float, bool))
+
+    assert issubclass(result, Node)
+    assert result.__name__ == "_ComposableWithMixed[int, str, float, bool]"
+    assert hasattr(result, "__type_args__")
+
+
+def test_prepare_generic_node_with_type_var_tuple_between_type_vars():
+    class _ComposableWithMixed(Composable[typing.Any]):
+        __type_params__ = (typing.TypeVar("T"), typing.TypeVarTuple("Ts"), typing.TypeVar("U"))
+
+        def __compose__(self):
+            pass  # pragma: no cover
+
+    result = prepare_generic_node(_ComposableWithMixed, (int, str, float, bool))
+
+    assert issubclass(result, Node)
+    assert result.__name__ == "_ComposableWithMixed[int, str, float, bool]"
+    assert hasattr(result, "__type_args__")
+
+
+def test_prepare_generic_node_type_var_tuple_type_args_values():
+    class _ComposableWithTypeVarTuple(Composable[typing.Any]):
+        Ts = typing.TypeVarTuple("Ts")
+        __type_params__ = (Ts,)
+
+        def __compose__(self):
+            pass  # pragma: no cover
+
+    result = prepare_generic_node(_ComposableWithTypeVarTuple, (int, str, float))
+
+    assert hasattr(result, "__type_args__")
+    assert _ComposableWithTypeVarTuple.Ts in result.__type_args__
+    assert result.__type_args__[_ComposableWithTypeVarTuple.Ts] == (int, str, float)
+
+
+def test_prepare_generic_node_mixed_type_args_values():
+    class _ComposableWithMixed(Composable[typing.Any]):
+        T = typing.TypeVar("T")
+        Ts = typing.TypeVarTuple("Ts")
+        U = typing.TypeVar("U")
+        __type_params__ = (T, Ts, U)
+
+        def __compose__(self):
+            pass  # pragma: no cover
+
+    result = prepare_generic_node(_ComposableWithMixed, (int, str, float, bool))
+
+    assert hasattr(result, "__type_args__")
+    assert _ComposableWithMixed.T in result.__type_args__
+    assert _ComposableWithMixed.Ts in result.__type_args__
+    assert _ComposableWithMixed.U in result.__type_args__
+    assert result.__type_args__[_ComposableWithMixed.T] is int
+    assert result.__type_args__[_ComposableWithMixed.Ts] == (str, float)
+    assert result.__type_args__[_ComposableWithMixed.U] is bool

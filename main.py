@@ -25,6 +25,16 @@ class Lolik[T: (str, int), *Ts, X: str | int](DataNode, abstract=True):
         return cls(t("11"), y("22"))
 
 
+@generic_node
+class TypeArgs[*Ts]:
+    def __init__(self, type_args: tuple[typing.Unpack[Ts]]) -> None:
+        self.type_args = type_args
+
+    @classmethod
+    def __compose__(cls, type_args: tuple[typing.Unpack[Ts]]) -> typing.Self:
+        return cls(type_args)
+
+
 class Interface:
     def get_lol(self) -> str:
         ...
@@ -120,7 +130,7 @@ class LOL:
 
 
 async def main():
-    agent = EventLoopAgent.build({LOL, C, D, D, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
+    agent = EventLoopAgent.build({TypeArgs[int, str], LOL, C, D, D, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
 
     global_scope = Scope(detail="global")
     global_scope.push(Value(Interface, MyInterface()))

@@ -21,7 +21,7 @@ def prepare_generic_node(
 
     if type_args in generic_nodes:
         return generic_nodes[type_args]
-    
+
     type_arg_dict = get_type_args_values(type_args, composable.__type_params__)
     generic_node = create_node(
         f"{composable.__name__}[{', '.join(type_arg.__name__ for type_arg in type_args)}]",

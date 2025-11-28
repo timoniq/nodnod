@@ -156,3 +156,63 @@ def test_node_type_self_assignment():
             pass  # pragma: no cover
 
     assert SelfTypeNode.__type__ is SelfTypeNode
+
+
+def test_node_with_type_var_tuple():
+    Ts = typing.TypeVarTuple("Ts")
+
+    class GenericNodeWithTuple(Node):
+        __type_params__ = (Ts,)
+
+        @classmethod
+        def __compose__(cls, args: tuple[typing.Unpack[Ts]]) -> None:
+            pass  # pragma: no cover
+
+    assert len(GenericNodeWithTuple.__dependencies__) == 1
+
+
+def test_node_with_tuple_invalid_no_args():
+    with pytest.raises(Exception):
+
+        class InvalidTupleNode(Node):
+            @classmethod
+            def __compose__(cls, arg_tuple: tuple) -> None:
+                pass  # pragma: no cover
+
+
+def test_node_with_tuple_invalid_non_unpack():
+    with pytest.raises(NotImplementedError):
+
+        class NonUnpackTupleNode(Node):
+            @classmethod
+            def __compose__(cls, arg_tuple: tuple[int, str]) -> None:
+                pass  # pragma: no cover
+
+
+def test_node_with_tuple_invalid_unpack_non_typevartuple():
+    with pytest.raises(NotImplementedError):
+
+        class UnpackNonTVTNode(Node):
+            @classmethod
+            def __compose__(cls, arg_tuple: tuple[typing.Unpack[tuple[int, str]]]) -> None:
+                pass  # pragma: no cover
+
+
+def test_node_with_type_var_tuple_mixed_params():
+    T = typing.TypeVar("T")
+    Ts = typing.TypeVarTuple("Ts")
+    U = typing.TypeVar("U")
+
+    class MixedGenericNode(Node):
+        __type_params__ = (T, Ts, U)
+
+        @classmethod
+        def __compose__(
+            cls,
+            first_type: type[T],
+            middle_types: tuple[typing.Unpack[Ts]],
+            last_type: type[U],
+        ) -> None:
+            pass  # pragma: no cover
+
+    assert len(MixedGenericNode.__dependencies__) == 3

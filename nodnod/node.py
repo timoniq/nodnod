@@ -83,15 +83,26 @@ class Node[T = typing.Any, Root = typing.Any]:
                     dependency_nodes.add(create_option_node(dep_type))
                 elif is_type(dep_type, kungfu.Result):
                     dependency_nodes.add(create_result_node(dep_type))
-                elif is_type(dep_type, type):
+                elif is_type(dep_type, type) or is_type(dep_type, tuple):
                     args = typing.get_args(dep_type)
                     if not args:
-                        raise NodeBuildError(f"Expected `type` with type argument, got `{dep_type!r}`.")
+                        raise NodeBuildError(f"Expected `type` or `tuple` with type argument, got `{dep_type!r}`.")
 
-                    if is_type(type(args[0]), typing.TypeVar):
-                        type_arg_node = create_type_arg_node(cls, args[0], dep_type)
-                    else:
-                        raise NotImplementedError("Only type with type var is supported.")
+                    if is_type(dep_type, type):
+                        if is_type(type(args[0]), typing.TypeVar):
+                            type_arg_node = create_type_arg_node(cls, args[0], dep_type)
+                        else:
+                            raise NotImplementedError("Only `type` with type var is supported.")
+
+                    elif is_type(dep_type, tuple):
+                        if (
+                            is_type(type(args[0]), typing._UnpackGenericAlias)  # type: ignore
+                            and (unpack_args := typing.get_args(args[0]))
+                            and is_type(type(unpack_args[0]), typing.TypeVarTuple)
+                        ):
+                            type_arg_node = create_type_arg_node(cls, unpack_args[0], dep_type)
+                        else:
+                            raise NotImplementedError("Only `typing.Unpack` with type var tuple is supported.")
 
                     dependency_nodes.add(type_arg_node)
                 else:

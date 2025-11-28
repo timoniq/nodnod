@@ -9,17 +9,19 @@ def get_type_args_values(args: tuple[typing.Any, ...], parameters: TypeParameter
     if not parameters:
         return {}
 
-    type_args = {}   
+    type_args = {}
     index = 0
 
     for i, parameter in enumerate(parameters):
         if isinstance(parameter, typing.TypeVarTuple):
-            index += max(len(args) - index - (len(parameters) - i - 1), 0)
+            count = max(len(args) - index - (len(parameters) - i - 1), 0)
+            type_args[parameter] = tuple(args[index:index + count])
+            index += count
         elif index < len(args):
             type_args[parameter] = args[index]
             index += 1
         else:
-            type_args[parameter] = parameter.__default__ 
+            type_args[parameter] = parameter.__default__
 
     return type_args
 
