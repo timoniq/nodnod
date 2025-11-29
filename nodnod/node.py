@@ -58,6 +58,16 @@ class Node[T = typing.Any, Root = typing.Any]:
             # or fill forward refs if node is being initialized
             for name, dep_type in all_args.items():
                 if isinstance(dep_type, typing.ForwardRef):
+                    # Check if there are any hooks that can process this forward ref
+                    is_processed_by_hook = False
+                    for hook in injection_hooks:
+                        if hook(cls, name, dep_type):  # type: ignore
+                            is_processed_by_hook = True
+                            break
+                    
+                    if is_processed_by_hook:
+                        continue
+                    
                     if (ref := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
                         all_args[name] = ref
                         continue
