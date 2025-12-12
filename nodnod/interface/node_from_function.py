@@ -66,8 +66,11 @@ def create_node_from_function(
         namespace={"__compose__": func, "__module__": func.__module__},
         injection_hooks=(collect_externals_hook,),
     )
+    
     if forward_refs is not None:
         initialize_forward_refs(forward_refs)
+    else:
+        initialize_forward_refs(func.__globals__)
     
     node.__injections__.add(Externals)
     node.__initialize__ = initialize_node_with_externals  # type: ignore
