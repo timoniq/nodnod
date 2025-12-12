@@ -58,16 +58,6 @@ class Node[T = typing.Any, Root = typing.Any]:
             # or fill forward refs if node is being initialized
             for name, dep_type in all_args.items():
                 if isinstance(dep_type, typing.ForwardRef):
-                    # Check if there are any hooks that can process this forward ref
-                    is_processed_by_hook = False
-                    for hook in injection_hooks:
-                        if hook(cls, name, dep_type):  # type: ignore
-                            is_processed_by_hook = True
-                            break
-                    
-                    if is_processed_by_hook:
-                        continue
-                    
                     if (ref := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
                         all_args[name] = ref
                         continue
@@ -157,13 +147,23 @@ class Node[T = typing.Any, Root = typing.Any]:
 
             setattr(cls, "__traverse__", build_queue(cls, []))
 
+            INITIALIZED_FORWARD_REFS[cls.__name__] = cls
+
             # Initialize nodes that requested node as forward ref
             for request in FORWARD_REF_REQUESTS.pop(cls.__name__, []):
-                INITIALIZED_FORWARD_REFS[cls.__name__] = cls
                 request.__init_subclass__()
 
     def __repr__(self) -> str:
         return f"<node `{type(self).__name__}`>"
+
+
+
+def initialize_forward_refs(forward_refs: dict[str, typing.Any]) -> None:
+    for type_name, forward_ref_request in FORWARD_REF_REQUESTS.items():
+        if type_name in forward_refs:
+            INITIALIZED_FORWARD_REFS[type_name] = forward_refs[type_name]
+        for dependency in forward_ref_request:
+            dependency.__init_subclass__()
 
 
 __all__ = ("Injection", "Node", "Queue")

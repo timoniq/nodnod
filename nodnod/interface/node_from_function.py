@@ -1,5 +1,5 @@
 import typing
-from nodnod.node import Node, Injection, is_type, InjectionHook
+from nodnod.node import Node, Injection, is_type, initialize_forward_refs
 from nodnod.agent.event_loop.agent import EventLoopAgent, Agent
 from nodnod.value import Value
 from nodnod.scope import Scope
@@ -37,16 +37,27 @@ def initialize_node_with_externals(cls, values: set[Value[typing.Any]]) -> typin
             externals_value = value.value
         else:
             compose_kwargs[names[value.cls]] = value.value
-
+    
     for external_name in externals:
-        if external_name in externals:
+        if external_name in externals_value:
             compose_kwargs[external_name] = externals_value[external_name]
 
     return cls.__compose__(**compose_kwargs)
 
 
+class _NameDict(dict[typing.Any, str]):
+    def __getitem__(self, key: typing.Any) -> str:
+        if key in self:
+            return self[key]
+        if name := self.get(typing.ForwardRef(key.__name__)):
+            return name
+        raise LookupError
+
+
 def create_node_from_function(
     func: typing.Callable[..., typing.Any],
+    *,
+    forward_refs: dict[str, typing.Any] | None = None,
 ) -> type[Node]:
     node = create_node(
         f"Node:{func.__name__}",
@@ -55,10 +66,13 @@ def create_node_from_function(
         namespace={"__compose__": func, "__module__": func.__module__},
         injection_hooks=(collect_externals_hook,),
     )
+    if forward_refs is not None:
+        initialize_forward_refs(forward_refs)
+    
     node.__injections__.add(Externals)
     node.__initialize__ = initialize_node_with_externals  # type: ignore
 
-    names = {}
+    names = _NameDict()
 
     for dep_type, dep_name in reverse_dict(resolve_signature(func).merge()).items():
         if is_type(dep_type, Injection):
