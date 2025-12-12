@@ -159,9 +159,11 @@ class Node[T = typing.Any, Root = typing.Any]:
 
 
 def initialize_forward_refs(forward_refs: dict[str, typing.Any]) -> None:
-    for type_name, forward_ref_request in FORWARD_REF_REQUESTS.items():
+    for type_name in FORWARD_REF_REQUESTS.keys():
         if type_name in forward_refs:
             INITIALIZED_FORWARD_REFS[type_name] = forward_refs[type_name]
+    
+    for forward_ref_request in FORWARD_REF_REQUESTS.values():
         for dependency in forward_ref_request:
             dependency.__init_subclass__()
 
