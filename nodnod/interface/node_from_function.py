@@ -48,7 +48,7 @@ def initialize_node_with_externals(cls, values: set[Value[typing.Any]]) -> typin
 class _NameDict(dict[typing.Any, str]):
     def __getitem__(self, key: typing.Any) -> str:
         if key in self:
-            return self[key]
+            return super().__getitem__(key)
         if name := self.get(typing.ForwardRef(key.__name__)):
             return name
         raise LookupError
