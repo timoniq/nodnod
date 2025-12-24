@@ -22,9 +22,11 @@ type InjectionHook = typing.Callable[["type[Node]", str, type[typing.Any]], kung
 FORWARD_REF_REQUESTS = collections.defaultdict[str, list["type[Node]"]](list)
 INITIALIZED_FORWARD_REFS: dict[str, typing.Any] = {}
 
+ExternalDependency = typing.NewType("ExternalDependency", str)
+
 
 @classmethod
-def dummy_compose[Cls](cls: type[Cls]) -> Cls:
+def dummy_compose(cls: type[typing.Any]) -> typing.NoReturn:
     raise RuntimeError(f"`{cls.__name__}` does not provide `__compose__`. Maybe it should be abstract=True?")
 
 
@@ -57,6 +59,7 @@ class Node[T = typing.Any, Root = typing.Any]:
 
             # Search for forward refs and form requests to initialize node when forward ref node is initialized
             # or fill forward refs if node is being initialized
+
             for name, dep_type in all_args.items():
                 if isinstance(dep_type, typing.ForwardRef):
                     if (ann := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
@@ -176,7 +179,12 @@ def initialize_forward_refs(
 
             for dependency in forward_ref_request:
                 dependency.__init_subclass__()
-        elif not is_from_function:
+        elif is_from_function:
+            # Mark it as ExternalDependency because this is a ForwardRef to a type that could not be found among
+            # nodes or in the modules from globals. Probably it is defined inside a TYPE_CHECKING block.
+            INITIALIZED_FORWARD_REFS[type_name] = ExternalDependency(type_name)
+        else:
+            # Otherwise, the node cannot have external dependencies, so it should raise an error
             raise LookupError(f"Dependency `{type_name}` not found")
 
 

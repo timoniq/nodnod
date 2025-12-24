@@ -52,10 +52,8 @@ class _NameDict(dict[typing.Any, str]):
         if key in self:
             return super().__getitem__(key)
 
-        for k, v in self.copy().items():
-            if isinstance(k, typing.ForwardRef) and any(x == k.__forward_arg__ for x in (key.__name__, repr(key))):
-                self[key] = v
-                return v
+        if (name := self.get(key.__name__)) or (name := self.get(repr(key))):
+            return name
 
         raise KeyError(key)
 
@@ -79,6 +77,16 @@ def create_node_from_function(
     else:
         initialize_forward_refs(getattr(func, "__globals__", {}), is_from_function=True)
 
+    if node.__injections__ is None:
+        node.__init_subclass__(injection_hooks=(collect_externals_hook,))
+
+        if node.__injections__ is None:
+            raise LookupError(
+                f"Cannot initialize node `{node.__name__}` due to unresolved dependencies, "
+                "including unresolved `ForwardRef`s. You can provide the `forward_refs` "
+                "parameter to resolve them.",
+            )
+
     node.__injections__.add(Externals)
     node.__initialize__ = initialize_node_with_externals  # type: ignore
 
@@ -87,6 +95,8 @@ def create_node_from_function(
     for dep_type, dep_name in reverse_dict(resolve_signature(func).merge()).items():
         if is_type(dep_type, Injection):
             dep_type = typing.get_args(dep_type)[0]
+        if isinstance(dep_type, typing.ForwardRef):
+            dep_type = dep_type.__forward_arg__
         names[dep_type] = dep_name
 
     setattr(node, "__names__", names)

@@ -103,8 +103,7 @@ def test_resolve_signature_string_annotation():
 
     assert "x" in signature.kwargs
     annotation = signature.kwargs["x"]
-    assert isinstance(annotation, typing.ForwardRef)
-    assert annotation.__forward_arg__ == "int"
+    assert annotation is int
 
 
 def test_resolve_signature_positional_only():
