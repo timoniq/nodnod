@@ -1,12 +1,14 @@
 import typing
-from nodnod.node import Node, Injection, is_type, initialize_forward_refs
-from nodnod.agent.event_loop.agent import EventLoopAgent, Agent
-from nodnod.value import Value
+
+import kungfu
+
+from nodnod.agent.event_loop.agent import Agent, EventLoopAgent
+from nodnod.node import Injection, Node, initialize_forward_refs, is_type
 from nodnod.scope import Scope
 from nodnod.utils.create_node import create_node
-from nodnod.utils.resolve_signature import resolve_signature
 from nodnod.utils.misc import reverse_dict
-import kungfu
+from nodnod.utils.resolve_signature import resolve_signature
+from nodnod.value import Value
 
 
 def collect_externals_hook(node: type[Node], dep_name: str, dep_type: type[typing.Any]) -> kungfu.Pulse[str]:
@@ -37,7 +39,7 @@ def initialize_node_with_externals(cls, values: set[Value[typing.Any]]) -> typin
             externals_value = value.value
         else:
             compose_kwargs[names[value.cls]] = value.value
-    
+
     for external_name in externals:
         if external_name in externals_value:
             compose_kwargs[external_name] = externals_value[external_name]
@@ -49,29 +51,34 @@ class _NameDict(dict[typing.Any, str]):
     def __getitem__(self, key: typing.Any) -> str:
         if key in self:
             return super().__getitem__(key)
-        if name := self.get(typing.ForwardRef(key.__name__)):
-            return name
-        raise LookupError
+
+        for k, v in self.copy().items():
+            if isinstance(k, typing.ForwardRef) and any(x == k.__forward_arg__ for x in (key.__name__, repr(key))):
+                self[key] = v
+                return v
+
+        raise KeyError(key)
 
 
 def create_node_from_function(
     func: typing.Callable[..., typing.Any],
     *,
     forward_refs: dict[str, typing.Any] | None = None,
+    module: str | None = None,
 ) -> type[Node]:
     node = create_node(
-        f"Node:{func.__name__}",
+        f"Node:{module or func.__name__}",
         Node,
         bases=(),
-        namespace={"__compose__": func, "__module__": func.__module__},
+        namespace={"__compose__": func, "__module__": module or func.__module__},
         injection_hooks=(collect_externals_hook,),
     )
-    
+
     if forward_refs is not None:
-        initialize_forward_refs(forward_refs)
+        initialize_forward_refs(forward_refs, is_from_function=True)
     else:
-        initialize_forward_refs(func.__globals__)
-    
+        initialize_forward_refs(getattr(func, "__globals__", {}), is_from_function=True)
+
     node.__injections__.add(Externals)
     node.__initialize__ = initialize_node_with_externals  # type: ignore
 

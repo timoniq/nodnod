@@ -19,8 +19,8 @@ type Queue = list[type[Node]]
 type Injection[T] = typing.Annotated[T, ...]
 type InjectionHook = typing.Callable[["type[Node]", str, type[typing.Any]], kungfu.Pulse[str]]
 
-FORWARD_REF_REQUESTS = collections.defaultdict(list["type[Node]"])
-INITIALIZED_FORWARD_REFS = {}
+FORWARD_REF_REQUESTS = collections.defaultdict[str, list["type[Node]"]](list)
+INITIALIZED_FORWARD_REFS: dict[str, typing.Any] = {}
 
 
 @classmethod
@@ -36,7 +36,7 @@ class Node[T = typing.Any, Root = typing.Any]:
     __initialize__: typing.Callable[[set["Value"]], ComposeResponse[T]] = None  # type: ignore
     __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
 
-    def __init_subclass__(
+    def __init_subclass__(  # noqa: PLR0915
         cls,
         abstract: bool = False,
         injection_hooks: tuple[InjectionHook, ...] = (),
@@ -53,16 +53,22 @@ class Node[T = typing.Any, Root = typing.Any]:
             # Resolve dependecies via __compose__ signature
             signature = resolve_signature(cls.__compose__, ignore_bound_parameters=True)
             all_args = signature.merge()
+            has_forward_refs_requests = False
 
             # Search for forward refs and form requests to initialize node when forward ref node is initialized
             # or fill forward refs if node is being initialized
             for name, dep_type in all_args.items():
                 if isinstance(dep_type, typing.ForwardRef):
-                    if (ref := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
-                        all_args[name] = ref
+                    if (ann := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
+                        all_args[name] = ann
                         continue
+
                     FORWARD_REF_REQUESTS[dep_type.__forward_arg__].append(cls)
-                    return
+                    has_forward_refs_requests = True
+
+            # If there are forward refs requests, return early to request forward refs to be initialized
+            if has_forward_refs_requests:
+                return
 
             # Dependencies are all types from __compose__ signature
             dependency_nodes = set[type[Node]]()
@@ -157,16 +163,21 @@ class Node[T = typing.Any, Root = typing.Any]:
         return f"<node `{type(self).__name__}`>"
 
 
-
-def initialize_forward_refs(forward_refs: dict[str, typing.Any]) -> None:
+def initialize_forward_refs(
+    forward_refs: dict[str, typing.Any],
+    *,
+    is_from_function: bool = False,
+) -> None:
     while FORWARD_REF_REQUESTS:
         type_name, forward_ref_request = FORWARD_REF_REQUESTS.popitem()
+
         if type_name in forward_refs:
             INITIALIZED_FORWARD_REFS[type_name] = forward_refs[type_name]
 
             for dependency in forward_ref_request:
                 dependency.__init_subclass__()
-        else:
-            raise LookupError(f"Dependency {type_name} not found")
-    
+        elif not is_from_function:
+            raise LookupError(f"Dependency `{type_name}` not found")
+
+
 __all__ = ("Injection", "Node", "Queue")
