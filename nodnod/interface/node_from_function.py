@@ -65,7 +65,7 @@ def create_node_from_function(
     module: str | None = None,
 ) -> type[Node]:
     node = create_node(
-        f"Node:{module or func.__name__}",
+        f"Node:{func.__name__}",
         Node,
         bases=(),
         namespace={"__compose__": func, "__module__": module or func.__module__},
