@@ -32,6 +32,7 @@ def prepare_generic_node(
             __initialize__=None,
             __dependencies__=None,
             __module__=composable.__module__,
+            __type_params__=composable.__type_params__,
         ),
     )
     generic_node.__type__ = generic_node

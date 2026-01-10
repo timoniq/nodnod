@@ -1,12 +1,25 @@
 import dataclasses
 import inspect
 import sys
+import types
 import typing
 from functools import cache
 
-from typing_extensions import Format, evaluate_forward_ref, get_annotations
+from typing_extensions import Format, ForwardRef, evaluate_forward_ref, get_annotations
 
-type AnnotationForm = typing.Any | typing.ForwardRef
+type AnnotationForm = ForwardRef | typing.Any
+
+
+def is_routine_method(obj: typing.Any, /) -> bool:
+    return inspect.isbuiltin(obj) or inspect.ismethod(obj) or inspect.ismethodwrapper(obj)
+
+
+def is_routine_descriptor(obj: typing.Any, /) -> bool:
+    return (
+        inspect.ismethoddescriptor(obj)
+        or inspect.isgetsetdescriptor(obj)
+        or isinstance(obj, types.ClassMethodDescriptorType)
+    )
 
 
 @dataclasses.dataclass
@@ -40,22 +53,45 @@ class Signature:
 
 
 @cache
-def resolve_callable_annotations(obj: typing.Callable[..., typing.Any], /) -> dict[str, AnnotationForm]:
+def resolve_callable_annotations(
+    obj: typing.Callable[..., typing.Any],
+    /,
+    *,
+    bound_class: type[typing.Any] | None = None,
+) -> dict[str, AnnotationForm]:
     """Resolves callable annotations"""
 
     annotations: dict[str, AnnotationForm] = {}
+    localns: dict[str, typing.Any] | None = None
 
-    for name, annotation in get_annotations(obj, eval_str=False, format=Format.FORWARDREF).items():
+    if bound_class is not None:
+        localns = {
+            param.__name__: param
+            for param in getattr(bound_class, "__type_params__", ())
+        }
+        localns |= {k: v for k, v in bound_class.__dict__.items() if not is_routine_method(v) and not is_routine_descriptor(v)}
+
+    for name, annotation in get_annotations(
+        obj,
+        locals=localns,
+        eval_str=False,
+        format=Format.FORWARDREF,
+    ).items():
         if isinstance(annotation, str):
             module = sys.modules.get(obj_mod, None) if (obj_mod := getattr(obj, "__module__", None)) is not None else None
-            annotation = typing.ForwardRef(arg=annotation, is_argument=True, module=module)
+            annotation = ForwardRef(arg=annotation, is_argument=True, module=module)
 
-        if not isinstance(annotation, typing.ForwardRef):
+        if not isinstance(annotation, ForwardRef):
             annotations[name] = annotation
             continue
 
         try:
-            value = evaluate_forward_ref(annotation, owner=obj, format=Format.VALUE)
+            value = evaluate_forward_ref(
+                forward_ref=annotation,
+                owner=obj,
+                locals=localns,
+                format=Format.VALUE,
+            )
         except NameError:
             annotations[name] = annotation
         else:
@@ -65,14 +101,18 @@ def resolve_callable_annotations(obj: typing.Callable[..., typing.Any], /) -> di
 
 
 @cache
-def resolve_signature(callable: typing.Callable[..., typing.Any], ignore_bound_parameters: bool = False) -> Signature:
+def resolve_signature(
+    callable: typing.Callable[..., typing.Any],
+    bound_class: type[typing.Any] | None = None,
+    ignore_bound_parameters: bool = False,
+) -> Signature:
     """Resolves callable signature"""
 
     if isinstance(callable, classmethod | staticmethod):
         callable = callable.__func__  # type: ignore
 
     sig = inspect.signature(callable)
-    hints = resolve_callable_annotations(callable)
+    hints = resolve_callable_annotations(callable, bound_class=bound_class)
     args = {}
     kwargs = {}
     var_positional = None
@@ -104,4 +144,4 @@ def resolve_signature(callable: typing.Callable[..., typing.Any], ignore_bound_p
     )
 
 
-__all__ = ("Signature", "resolve_signature")
+__all__ = ("Signature", "resolve_signature", "resolve_callable_annotations")

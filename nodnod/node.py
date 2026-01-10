@@ -2,6 +2,7 @@ import collections
 import typing
 
 import kungfu
+from typing_extensions import ForwardRef
 
 from nodnod.error import NodeBuildError
 from nodnod.utils.call import call_with_context
@@ -17,7 +18,7 @@ type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
 type Queue = list[type[Node]]
 
 type Injection[T] = typing.Annotated[T, ...]
-type InjectionHook = typing.Callable[["type[Node]", str, type[typing.Any]], kungfu.Pulse[str]]
+type InjectionHook = typing.Callable[["type[Node]", str, typing.Any], kungfu.Pulse[str]]
 
 FORWARD_REF_REQUESTS = collections.defaultdict[str, list["type[Node]"]](list)
 INITIALIZED_FORWARD_REFS: dict[str, typing.Any] = {}
@@ -53,7 +54,11 @@ class Node[T = typing.Any, Root = typing.Any]:
 
         if not abstract and not cls.__initialize__:
             # Resolve dependecies via __compose__ signature
-            signature = resolve_signature(cls.__compose__, ignore_bound_parameters=True)
+            signature = resolve_signature(
+                cls.__compose__,
+                bound_class=getattr(cls.__compose__, "__self__", cls),
+                ignore_bound_parameters=True,
+            )
             all_args = signature.merge()
             has_forward_refs_requests = False
 
@@ -85,7 +90,7 @@ class Node[T = typing.Any, Root = typing.Any]:
                     dependency_nodes.add(dep_type)
                 elif is_type(dep_type, Composable):
                     all_args[dep_name] = typing.get_origin(dep_type) or dep_type
-                    dependency_nodes.add(create_node_from_composable(all_args[dep_name]))
+                    dependency_nodes.add(create_node_from_composable(typing.cast("type[Composable]", all_args[dep_name])))
                 elif is_union(dep_type):
                     dependency_nodes.add(create_union_node(dep_type))
                 elif is_type(dep_type, kungfu.Option):
@@ -124,6 +129,15 @@ class Node[T = typing.Any, Root = typing.Any]:
                     if not is_processed_by_hook:
                         if is_type(dep_type, Injection):
                             dep_type = typing.get_args(dep_type)[0]
+
+                        # Unresolved ForwardRef
+                        if isinstance(dep_type, str | ForwardRef):
+                            # NOTE: Might it be worth implementing a way that resolves these ForwardRef's?
+                            raise LookupError(
+                                f"Unresolved dependency for `{dep_name}` of `{cls.__name__}`, "
+                                "it looks like a `ForwardRef` that could not be resolved.",
+                            )
+
                         injected_types.add(dep_type)
 
             if cls.__dependencies__ is None:
