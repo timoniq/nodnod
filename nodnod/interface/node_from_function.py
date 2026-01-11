@@ -5,6 +5,7 @@ import kungfu
 from nodnod.agent.event_loop.agent import Agent, EventLoopAgent
 from nodnod.node import Injection, Node, initialize_forward_refs, is_type
 from nodnod.scope import Scope
+from nodnod.utils.call import call_with_context
 from nodnod.utils.create_node import create_node
 from nodnod.utils.misc import reverse_dict
 from nodnod.utils.resolve_signature import resolve_signature
@@ -44,7 +45,7 @@ def initialize_node_with_externals(cls, values: set[Value[typing.Any]]) -> typin
         if external_name in externals_value:
             compose_kwargs[external_name] = externals_value[external_name]
 
-    return cls.__compose__(**compose_kwargs)
+    return call_with_context(cls.__compose__, compose_kwargs)
 
 
 class _NameDict(dict[typing.Any, str]):
@@ -83,8 +84,20 @@ def create_node_from_function(
 
     node.__injections__.add(Externals)
 
+    sig_annotations = reverse_dict(resolve_signature(func).merge())
+    names = _NameDict()
+
+    for dep_type, dep_name in sig_annotations.items():
+        if is_type(dep_type, Injection):
+            dep_type = typing.get_args(dep_type)[0]
+
+        if isinstance(dep_type, typing.ForwardRef):
+            dep_type = dep_type.__forward_arg__
+
+        names[dep_type] = dep_name
+
     if dependencies and node.__dependencies__:
-        sig_annotations = reverse_dict(resolve_signature(func).merge())
+        reversed_names = reverse_dict(names)
 
         for dep_type in node.__dependencies__:
             if (
@@ -94,18 +107,10 @@ def create_node_from_function(
             ):
                 node.__dependencies__.remove(dep_type)
                 node.__dependencies__.add(dependencies[sig_annotations[dep_type.__type__]])
+                names.pop(reversed_names[sig_annotations[dep_type.__type__]], None)
+                names[dependencies[sig_annotations[dep_type.__type__]].__type__] = sig_annotations[dep_type.__type__]
 
     node.__initialize__ = initialize_node_with_externals  # type: ignore
-
-    names = _NameDict()
-
-    for dep_type, dep_name in reverse_dict(resolve_signature(func).merge()).items():
-        if is_type(dep_type, Injection):
-            dep_type = typing.get_args(dep_type)[0]
-        if isinstance(dep_type, typing.ForwardRef):
-            dep_type = dep_type.__forward_arg__
-        names[dep_type] = dep_name
-
     setattr(node, "__names__", names)
     return node
 
