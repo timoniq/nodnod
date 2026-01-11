@@ -3,7 +3,6 @@ import typing
 import kungfu
 
 from nodnod.agent.event_loop.agent import Agent, EventLoopAgent
-from nodnod.interface.is_node import is_node
 from nodnod.node import Injection, Node, initialize_forward_refs, is_type
 from nodnod.scope import Scope
 from nodnod.utils.create_node import create_node
@@ -84,11 +83,17 @@ def create_node_from_function(
 
     node.__injections__.add(Externals)
 
-    if dependencies:
-        for name, dep_type in resolve_signature(func).merge().items():
-            if name in dependencies and is_node(dep_type):
+    if dependencies and node.__dependencies__:
+        sig_annotations = reverse_dict(resolve_signature(func).merge())
+
+        for dep_type in node.__dependencies__:
+            if (
+                hasattr(dep_type, "__type__")
+                and dep_type.__type__ in sig_annotations
+                and sig_annotations[dep_type.__type__] in dependencies
+            ):
                 node.__dependencies__.remove(dep_type)
-                node.__dependencies__.add(dependencies[name])
+                node.__dependencies__.add(dependencies[sig_annotations[dep_type.__type__]])
 
     node.__initialize__ = initialize_node_with_externals  # type: ignore
 
