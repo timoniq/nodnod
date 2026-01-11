@@ -133,6 +133,7 @@ class Node[T = typing.Any, Root = typing.Any]:
                         # Unresolved ForwardRef
                         if isinstance(dep_type, str | ForwardRef):
                             # NOTE: Might it be worth implementing a way that resolves these ForwardRef's?
+                            # Resolve in runtime via helper function like `get_subnodes`.
                             raise LookupError(
                                 f"Unresolved dependency for `{dep_name}` of `{cls.__name__}`, "
                                 "it looks like a `ForwardRef` that could not be resolved.",

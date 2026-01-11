@@ -5,6 +5,7 @@ import kungfu
 import pytest
 
 from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, scalar_node
+from nodnod.node import INITIALIZED_FORWARD_REFS
 from nodnod.interface.scalar import scalar_node
 
 
@@ -47,6 +48,20 @@ class TestDataNode:
 
         assert issubclass(TestData, DataNode)
         assert issubclass(TestData, Node)
+
+
+class TestNodeErrorForwardRefDependency:
+    def test_node_error_forward_ref_dependency(self):
+        class NodeA(Node):
+            @classmethod
+            def __compose__(cls, dep: "Dummy") -> None:  # type: ignore
+                pass  # pragma: no cover
+
+        INITIALIZED_FORWARD_REFS["Dummy"] = "Dummy"  # Cannot resolve forward ref, so it still is a ForwardRef
+
+        with pytest.raises(LookupError, match=r"^Unresolved dependency for `dep` of `NodeA`, it looks like a `ForwardRef` that could not be resolved\.$"):
+            # Try to initialize the node, it should raise an error
+            NodeA.__init_subclass__()
 
 
 class TestScope:

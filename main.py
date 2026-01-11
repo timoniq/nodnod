@@ -5,7 +5,6 @@ import typing
 import kungfu
 
 from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, Value, case, polymorphic, scalar_node
-from nodnod.interface.cache import cache
 from nodnod.interface.either import ConcurrentEither, SequentialEither
 from nodnod.interface.generic import generic_node
 from nodnod.interface.polymorphic import case, polymorphic
@@ -63,16 +62,6 @@ class B(Node[int]):
     @classmethod
     async def __compose__(cls):
         yield 5
-
-
-@cache(seconds=10)
-@scalar_node
-class D(Node[int]):
-    @classmethod
-    async def __compose__(cls):
-        print("composing d")  # every 10 seconds
-        yield 10
-        print("closing d")
 
 
 class AorB(SequentialEither):
