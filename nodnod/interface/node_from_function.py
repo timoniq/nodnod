@@ -80,13 +80,6 @@ def create_node_from_function(
     if node.__injections__ is None:
         node.__init_subclass__(injection_hooks=(collect_externals_hook,))
 
-        if node.__injections__ is None:
-            raise LookupError(
-                f"Cannot initialize node `{node.__name__}` due to unresolved dependencies, "
-                "including unresolved `ForwardRef`s. You can provide the `forward_refs` "
-                "parameter to resolve them.",
-            )
-
     node.__injections__.add(Externals)
     node.__initialize__ = initialize_node_with_externals  # type: ignore
 

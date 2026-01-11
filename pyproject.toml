@@ -86,12 +86,14 @@ fixable = ["ALL"]
 exclude = [".venv", ".idea", "docs", "tests/**.py"]
 
 [tool.coverage.run]
+source = ["nodnod", "tests"]
 omit = [
     "nodnod/agent/layer/*.py",
     "nodnod/builder/build_parallels.py",
 ]
 
 [tool.coverage.report]
+show_missing = true
 exclude_also = [
     "if __debug__",
 ]
