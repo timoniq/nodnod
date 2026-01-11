@@ -83,6 +83,25 @@ class TestCreateNodeFromFunction:
 
         assert result == 15
 
+    def test_create_node_from_function_with_custom_dependencies(self):
+        @scalar_node
+        class ANode:
+            @classmethod
+            def __compose__(cls) -> int:
+                ...  # pragma: no cover
+
+        @scalar_node
+        class BNode:
+            @classmethod
+            def __compose__(cls) -> int:
+                ...  # pragma: no cover
+
+        def func(n: ANode) -> None:
+            ...  # pragma: no cover
+
+        node = create_node_from_function(func, dependencies={"n": BNode})  # type: ignore
+        assert BNode in node.__dependencies__
+
 
 class TestCreateAgentFromNode:
     def test_create_agent_from_simple_node(self):

@@ -3,6 +3,7 @@ import typing
 import kungfu
 
 from nodnod.agent.event_loop.agent import Agent, EventLoopAgent
+from nodnod.interface.is_node import is_node
 from nodnod.node import Injection, Node, initialize_forward_refs, is_type
 from nodnod.scope import Scope
 from nodnod.utils.create_node import create_node
@@ -62,6 +63,7 @@ def create_node_from_function(
     func: typing.Callable[..., typing.Any],
     *,
     forward_refs: dict[str, typing.Any] | None = None,
+    dependencies: typing.Mapping[str, type[Node]] | None = None,
     module: str | None = None,
 ) -> type[Node]:
     node = create_node(
@@ -81,6 +83,13 @@ def create_node_from_function(
         node.__init_subclass__(injection_hooks=(collect_externals_hook,))
 
     node.__injections__.add(Externals)
+
+    if dependencies:
+        for name, dep_type in resolve_signature(func).merge().items():
+            if name in dependencies and is_node(dep_type):
+                node.__dependencies__.remove(dep_type)
+                node.__dependencies__.add(dependencies[name])
+
     node.__initialize__ = initialize_node_with_externals  # type: ignore
 
     names = _NameDict()
