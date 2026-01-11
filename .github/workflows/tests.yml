@@ -15,7 +15,7 @@ jobs:
           - "3.14"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: asottile/workflows/.github/actions/fast-checkout@v1.10.0
 
       - uses: ./.github/actions/install-dependencies
         with:
@@ -34,7 +34,7 @@ jobs:
           - "3.14"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: asottile/workflows/.github/actions/fast-checkout@v1.10.0
 
       - uses: ./.github/actions/install-dependencies
         with:
