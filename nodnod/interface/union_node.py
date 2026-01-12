@@ -32,7 +32,7 @@ def get_none_node() -> type[Node]:
         name="NoneNode",
         base_node=Node,
         bases=tuple(),
-        namespace=dict(__dependencies__=set()),
+        namespace=dict(__dependencies__=set(), __compose__=lambda: None),
     )
 
 
@@ -53,7 +53,7 @@ def create_union_node(
 
     is_optional = False
     either = list()
-    injected_types = set()
+    injected_types = {Externals} if is_from_function else set()
 
     for arg in args:
         if arg in NONE_TYPES:
@@ -85,7 +85,6 @@ def create_union_node(
     )
 
     if is_from_function:
-        node.__injections__.add(Externals)
         setattr(node, "__initialize__", initialize_node_with_externals)
 
     return node
