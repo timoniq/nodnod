@@ -72,7 +72,7 @@ def create_node_from_function(
 ) -> type[Node]:
     node_name = getattr(func.__code__, "co_qualname", None) if hasattr(func, "__code__") else getattr(func, "__qualname__", None)
     node = create_node(
-        f"Node:{node_name or getattr(func, '__name__', '<function>'}",
+        f"Node:{node_name or getattr(func, '__name__', '<function>')}",
         Node,
         bases=(),
         namespace={"__compose__": func, "__module__": module or getattr(func, "__module__", "<module>")},
@@ -96,7 +96,7 @@ def create_node_from_function(
         if is_type(dep_type, Injection):
             dep_type = typing.get_args(dep_type)[0]
 
-        if isinstance(dep_type, typing.ForwardRef):
+        if isinstance(dep_type, ForwardRef):
             dep_type = dep_type.__forward_arg__
 
         names[dep_type] = dep_name
