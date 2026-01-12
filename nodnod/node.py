@@ -43,6 +43,7 @@ class Node[T = typing.Any, Root = typing.Any]:
         cls,
         abstract: bool = False,
         injection_hooks: tuple[InjectionHook, ...] = (),
+        is_from_function: bool = False,
     ) -> None:
         from nodnod.builder.build_queue import build_queue
         from nodnod.interface.composable import Composable

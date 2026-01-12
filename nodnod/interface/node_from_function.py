@@ -81,6 +81,7 @@ def create_node_from_function(
         bases=bases,
         namespace={"__compose__": func, "__module__": module or getattr(func, "__module__", "<module>")} | namespace,
         injection_hooks=(collect_externals_hook,),
+        is_from_function=True,
     )
 
     if forward_refs is not None:
@@ -89,7 +90,7 @@ def create_node_from_function(
         initialize_forward_refs(getattr(func, "__globals__", {}), is_from_function=True)
 
     if node.__injections__ is None:
-        node.__init_subclass__(injection_hooks=(collect_externals_hook,))
+        node.__init_subclass__(injection_hooks=(collect_externals_hook,), is_from_function=True)
 
     node.__injections__.add(Externals)
 
@@ -102,7 +103,7 @@ def create_node_from_function(
             new_dependency = dependencies[dep_name]
             old_dependency = next((dep for dep in node.__dependencies__ if dep.__type__ is dep_type), None)
 
-            if old_dependency is not None and old_dependency in node.__dependencies__:
+            if old_dependency is not None:
                 node.__dependencies__.remove(old_dependency)
 
             node.__dependencies__.add(new_dependency)

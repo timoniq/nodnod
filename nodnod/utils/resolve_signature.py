@@ -26,6 +26,7 @@ def is_routine_descriptor(obj: typing.Any, /) -> bool:
 class Signature:
     args: dict[str, AnnotationForm]
     kwargs: dict[str, AnnotationForm]
+    optionals: set[str] = dataclasses.field(default_factory=set)
     var_positional: inspect.Parameter | None = None
     var_keyword: inspect.Parameter | None = None
 
@@ -115,12 +116,16 @@ def resolve_signature(
     hints = resolve_callable_annotations(callable, bound_class=bound_class)
     args = {}
     kwargs = {}
+    optionals = set()
     var_positional = None
     var_keyword = None
 
     for name, param in sig.parameters.items():
         if ignore_bound_parameters and name in {"cls", "self"}:
             continue
+
+        if param.default is not param.empty:
+            optionals.add(name)
 
         if param.kind == inspect.Parameter.VAR_POSITIONAL:
             var_positional = param
@@ -139,6 +144,7 @@ def resolve_signature(
     return Signature(
         args=args,
         kwargs=kwargs,
+        optionals=optionals,
         var_positional=var_positional,
         var_keyword=var_keyword,
     )

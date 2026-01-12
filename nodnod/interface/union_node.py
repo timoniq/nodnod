@@ -7,8 +7,12 @@ from functools import cache
 import kungfu
 
 from nodnod.error import NodeBuildError
+from nodnod.interface.node_from_function import Externals, initialize_node_with_externals
 from nodnod.interface.option_node import create_option_node
+from nodnod.node import Injection
 from nodnod.utils.create_node import create_node
+from nodnod.utils.injection import get_injection_type
+from nodnod.utils.is_type import is_type
 
 if typing.TYPE_CHECKING:
     from nodnod.node import Node
@@ -33,7 +37,13 @@ def get_none_node() -> type[Node]:
 
 
 @cache
-def create_union_node(union: types.UnionType, /) -> type[Node]:
+def create_union_node(
+    union: types.UnionType,
+    /,
+    *,
+    owner: typing.Any | None = None,
+    is_from_function: bool = False,
+) -> type[Node]:
     from nodnod.interface.either import SequentialEither
     from nodnod.interface.is_node import is_node
 
@@ -56,10 +66,12 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
             either.append(arg)
         elif origin_arg is kungfu.Option:
             either.append(create_option_node(arg))
-        else:
+        elif is_from_function and is_type(arg, Injection):
+            injected_types.add(get_injection_type(arg, owner=owner))
+        elif not is_from_function:
             injected_types.add(arg)
 
-    return create_node(
+    node = create_node(
         name="UnionNode[{}]".format(", ".join(str(arg) for arg in args)),
         base_node=SequentialEither,
         bases=tuple(),
@@ -71,6 +83,12 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
             __module__=__name__,
         ),
     )
+
+    if is_from_function:
+        node.__injections__.add(Externals)
+        setattr(node, "__initialize__", initialize_node_with_externals)
+
+    return node
 
 
 __all__ = ("create_union_node",)
