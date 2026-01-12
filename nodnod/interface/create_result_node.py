@@ -1,7 +1,7 @@
-import kungfu
-
 import typing
 from functools import cache
+
+import kungfu
 
 from nodnod.error import NodeBuildError
 from nodnod.utils.create_node import create_node

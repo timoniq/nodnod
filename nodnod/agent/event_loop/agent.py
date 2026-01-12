@@ -1,42 +1,49 @@
-from nodnod.agent.base import Agent
-from nodnod.node import Node, Queue
-from nodnod.scope import Scope, validate_local_scope_is_linked_to_node_scopes
-from nodnod.interface.either import Either
-from nodnod.interface.result_node import ResultNode
-from nodnod.agent.event_loop.coroutine import compose_coroutine, dependency_sequential_either_coroutine, dependency_concurrent_either_corountine, result_node_compose_coroutine
-from nodnod.builder.build_queue import traverse_all
 import asyncio
 import typing
+
 import kungfu
+
+from nodnod.agent.base import Agent
+from nodnod.agent.event_loop.coroutine import (
+    compose_coroutine,
+    dependency_concurrent_either_corountine,
+    dependency_sequential_either_coroutine,
+    result_node_compose_coroutine,
+)
+from nodnod.builder.build_queue import traverse_all
+from nodnod.scope import Scope, validate_local_scope_is_linked_to_node_scopes
+
+if typing.TYPE_CHECKING:
+    from nodnod.node import Node, Queue
 
 
 class EventLoopAgent(Agent):
     def __init__(
         self,
         traversed_nodes: "Queue",
-        final_nodes: typing.Iterable[type[Node]] | None = None,
+        final_nodes: typing.Iterable[type["Node"]] | None = None,
     ) -> None:
         self.traversed_nodes = traversed_nodes
         self.final_nodes = final_nodes or traversed_nodes
 
     @classmethod
-    def build(cls, nodes: set[type[Node]]) -> typing.Self:
+    def build(cls, nodes: set[type["Node"]]) -> typing.Self:
         return cls(traversed_nodes=traverse_all(nodes), final_nodes=nodes)
 
     def push_futures(
         self,
         local_scope: Scope,
-        mapped_scopes: dict[type[Node], Scope],
-        futures: dict[type[Node], asyncio.Future],
+        mapped_scopes: dict[type["Node"], Scope],
+        futures: dict[type["Node"], asyncio.Future],
     ) -> None:
+        from nodnod.interface.either import Either
+        from nodnod.interface.result_node import ResultNode
 
         for node in self.traversed_nodes:
-
             if node in futures:
                 continue
 
             if issubclass(node, Either):
-
                 if node.is_concurrent:
 
                     dependencies = [
@@ -111,8 +118,8 @@ class EventLoopAgent(Agent):
     async def run(
         self,
         local_scope: Scope,
-        mapped_scopes: dict[type[Node], Scope],
-        futures: dict[type[Node], asyncio.Future] | None = None,
+        mapped_scopes: dict[type["Node"], Scope],
+        futures: dict[type["Node"], asyncio.Future] | None = None,
     ):
         validate_local_scope_is_linked_to_node_scopes(local_scope, mapped_scopes)
 

@@ -1,13 +1,12 @@
 import pytest
+from typing_extensions import ForwardRef
 
-from nodnod import Node, Scope, scalar_node
+from nodnod import Node, Scope, scalar_node, create_agent_from_node, inject_externals
 from nodnod.agent.event_loop.agent import EventLoopAgent
 from nodnod.interface.node_from_function import (
     Externals,
     _NameDict,
-    create_agent_from_node,
     create_node_from_function,
-    inject_externals,
 )
 
 
@@ -18,7 +17,7 @@ class TestCreateNodeFromFunction:
 
         node = create_node_from_function(my_func)
 
-        assert node.__name__ == "Node:my_func"
+        assert node.__name__ == "Node:TestCreateNodeFromFunction.test_create_node_from_simple_function.<locals>.my_func"
         assert issubclass(node, Node)
         assert node.__compose__ is my_func
 
@@ -34,7 +33,7 @@ class TestCreateNodeFromFunction:
 
         node = create_node_from_function(my_func)
 
-        assert node.__name__ == "Node:my_func"
+        assert node.__name__ == "Node:TestCreateNodeFromFunction.test_create_node_from_function_with_dependencies.<locals>.my_func"
         assert DepNode in node.__dependencies__
 
     def test_create_node_with_externals(self):
@@ -82,6 +81,13 @@ class TestCreateNodeFromFunction:
             result = scope[node].value
 
         assert result == 15
+
+    def test_create_node_from_function_error_on_non_callable(self):
+        class Dummy:
+            ...
+
+        with pytest.raises(TypeError, match="^`func` must be kind of function, got `.*`"):
+            create_node_from_function(Dummy())  # type: ignore
 
     def test_create_node_from_function_with_custom_dependencies(self):
         @scalar_node
@@ -134,23 +140,11 @@ class TestNameDict:
 
         assert d["key"] == "value"
 
-    def test_name_dict_with_class_name(self):
-        class MyClass:
-            pass
-
+    def test_name_dict_with_forward_ref(self):
         d = _NameDict()
-        d["MyClass"] = "found_by_name"
+        d["SomeType"] = "val"
 
-        assert d[MyClass] == "found_by_name"
-
-    def test_name_dict_with_repr(self):
-        class SomeType:
-            pass
-
-        d = _NameDict()
-        d[repr(SomeType)] = "found_by_repr"
-
-        assert d[SomeType] == "found_by_repr"
+        assert d[ForwardRef("SomeType")] == "val"
 
     def test_name_dict_key_error(self):
         class UnknownType:
@@ -220,7 +214,7 @@ class TestNodeFromFunctionForwardRefs:
             forward_refs={"MyDep": MyDep}
         )
 
-        assert node.__name__ == "Node:func_with_forward_ref"
+        assert node.__name__ == "Node:TestNodeFromFunctionForwardRefs.test_forward_refs_with_explicit_refs.<locals>.func_with_forward_ref"
 
     @pytest.mark.asyncio
     async def test_forward_ref_as_external(self):

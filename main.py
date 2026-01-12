@@ -4,11 +4,19 @@ import typing
 
 import kungfu
 
-from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, Value, case, polymorphic, scalar_node
-from nodnod.interface.either import ConcurrentEither, SequentialEither
-from nodnod.interface.generic import generic_node
-from nodnod.interface.polymorphic import case, polymorphic
-from nodnod.interface.result_node import ResultNode
+from nodnod import (
+    DataNode,
+    EventLoopAgent,
+    Node,
+    NodeError,
+    Scope,
+    SequentialEither,
+    Value,
+    case,
+    generic_node,
+    polymorphic,
+    scalar_node,
+)
 from nodnod.utils.prepare_values import prepare_values
 
 
@@ -119,7 +127,7 @@ class LOL:
 
 
 async def main():
-    agent = EventLoopAgent.build({TypeArgs[int, str], LOL, C, D, D, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
+    agent = EventLoopAgent.build({TypeArgs[int, str], LOL, C, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
 
     global_scope = Scope(detail="global")
     global_scope.push(Value(Interface, MyInterface()))
