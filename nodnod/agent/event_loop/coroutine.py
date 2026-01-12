@@ -99,7 +99,7 @@ async def dependency_sequential_either_coroutine(
     return kungfu.Error(NodeError("no option found for either", from_many=errors))
 
 
-async def dependency_concurrent_either_corountine(
+async def dependency_concurrent_either_coroutine(
     dependencies: list[DependencyFuture],
 ) -> kungfu.Result[Value, NodeError]:
     errors: list[NodeError] = []
@@ -122,7 +122,7 @@ async def dependency_concurrent_either_corountine(
 
 __all__ = (
     "compose_coroutine",
-    "dependency_concurrent_either_corountine",
+    "dependency_concurrent_either_coroutine",
     "dependency_sequential_either_coroutine",
     "result_node_compose_coroutine",
 )

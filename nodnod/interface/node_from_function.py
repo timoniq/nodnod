@@ -3,6 +3,7 @@ import typing
 import kungfu
 from typing_extensions import ForwardRef
 
+from nodnod.builder.build_queue import build_queue
 from nodnod.interface.is_node import is_node
 from nodnod.node import ComposeResponse, Injection, Node, initialize_forward_refs, is_type
 from nodnod.utils.call import call_with_context
@@ -12,6 +13,8 @@ from nodnod.utils.resolve_signature import resolve_signature
 from nodnod.value import Value
 
 type LikeNode = typing.Any
+
+NODE_NAMESPACE: typing.Final = frozenset({k for k in Node.__dict__ if k not in type(Node).__dict__})
 
 
 def collect_externals_hook(
@@ -56,7 +59,8 @@ def create_node_from_function(
     dependencies: typing.Mapping[str, LikeNode] | None = None,
     module: str | None = None,
     bases: tuple[typing.Any, ...] = (),
-    namespace: dict[str, typing.Any] | None = None,
+    namespace: typing.Mapping[str, typing.Any] | None = None,
+    prohibit_intersaction_with_node_namespace: bool = True,
 ) -> type[Node]:
     if not callable(func):
         raise TypeError(f"`func` must be kind of function, got `{type(func)}`.")
@@ -66,11 +70,16 @@ def create_node_from_function(
         if hasattr(func, "__code__")
         else getattr(func, "__qualname__", None)
     )
+    namespace = dict(namespace) if namespace else {}
+
+    if prohibit_intersaction_with_node_namespace:
+        namespace = {k: v for k, v in namespace.items() if k not in NODE_NAMESPACE}
+
     node = create_node(
         f"Node:{node_name or getattr(func, '__name__', '<function>')}",
         Node,
         bases=bases,
-        namespace={"__compose__": func, "__module__": module or getattr(func, "__module__", "<module>")} | (namespace or {}),
+        namespace={"__compose__": func, "__module__": module or getattr(func, "__module__", "<module>")} | namespace,
         injection_hooks=(collect_externals_hook,),
     )
 
@@ -86,8 +95,20 @@ def create_node_from_function(
 
     sig_annotations = reverse_dict(resolve_signature(func).merge())
     names = _NameDict()
+    dependencies = {dep_name: dep for dep_name, dep in dependencies.items() if is_node(dep)} if dependencies else {}
 
     for dep_type, dep_name in sig_annotations.items():
+        if dep_name in dependencies:
+            new_dependency = dependencies[dep_name]
+            old_dependency = next((dep for dep in node.__dependencies__ if dep.__type__ is dep_type), None)
+
+            if old_dependency is not None and old_dependency in node.__dependencies__:
+                node.__dependencies__.remove(old_dependency)
+
+            node.__dependencies__.add(new_dependency)
+            names[new_dependency.__type__] = dep_name
+            continue
+
         if is_type(dep_type, Injection):
             dep_type = typing.get_args(dep_type)[0]
 
@@ -96,23 +117,9 @@ def create_node_from_function(
 
         names[dep_type] = dep_name
 
-    if dependencies and node.__dependencies__:
-        reversed_names = reverse_dict(names)
-
-        for dep_type in node.__dependencies__:
-            if (
-                hasattr(dep_type, "__type__")
-                and dep_type.__type__ in sig_annotations
-                and sig_annotations[dep_type.__type__] in dependencies
-                and is_node(dependencies[sig_annotations[dep_type.__type__]])
-            ):
-                node.__dependencies__.remove(dep_type)
-                node.__dependencies__.add(dependencies[sig_annotations[dep_type.__type__]])
-                names.pop(reversed_names[sig_annotations[dep_type.__type__]], None)
-                names[dependencies[sig_annotations[dep_type.__type__]].__type__] = sig_annotations[dep_type.__type__]
-
-    setattr(node, "__initialize__", initialize_node_with_externals)
     setattr(node, "__names__", names)
+    setattr(node, "__traverse__", build_queue(node, list()))
+    setattr(node, "__initialize__", initialize_node_with_externals)
     return node
 
 

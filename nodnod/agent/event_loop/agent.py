@@ -6,7 +6,7 @@ import kungfu
 from nodnod.agent.base import Agent
 from nodnod.agent.event_loop.coroutine import (
     compose_coroutine,
-    dependency_concurrent_either_corountine,
+    dependency_concurrent_either_coroutine,
     dependency_sequential_either_coroutine,
     result_node_compose_coroutine,
 )
@@ -51,7 +51,7 @@ class EventLoopAgent(Agent):
                     ]
 
                     collect_either = asyncio.Task(
-                        dependency_concurrent_either_corountine(
+                        dependency_concurrent_either_coroutine(
                             dependencies,
                         )
                     )
