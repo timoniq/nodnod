@@ -54,9 +54,10 @@ class Node[T = typing.Any, Root = typing.Any]:
 
         if not abstract and not cls.__initialize__:
             # Resolve dependecies via __compose__ signature
+            bound_class = cls.__compose__.__self__ if hasattr(cls.__compose__, "__self__") else cls
             signature = resolve_signature(
                 cls.__compose__,
-                bound_class=getattr(cls.__compose__, "__self__", cls),
+                bound_class=type(bound_class) if not isinstance(bound_class, type) else bound_class,
                 ignore_bound_parameters=True,
             )
             all_args = signature.merge()

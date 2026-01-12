@@ -9,7 +9,7 @@ from nodnod.utils.create_node import create_node
 CASE_MARK: typing.Final = "IS_CASE"
 
 
-def case[Cls, R, **P](case_method: typing.Callable[typing.Concatenate[Cls, P], R], /) -> typing.Callable[P, R]:
+def case_decorator[Cls, R, **P](case_method: typing.Callable[typing.Concatenate[Cls, P], R], /) -> typing.Callable[P, R]:
     if isinstance(case_method, classmethod):
         func = case_method.__func__
     else:
@@ -22,9 +22,12 @@ def case[Cls, R, **P](case_method: typing.Callable[typing.Concatenate[Cls, P], R
 
 def collect_cases(node_class: type[typing.Any]) -> list[typing.Callable[..., ComposeResponse[typing.Any]]]:
     cases = []
-    for item in node_class.__dict__.values():
-        if isinstance(item, classmethod) and getattr(item.__func__, CASE_MARK, None) is True:
-            cases.append(item)
+
+    for base in node_class.mro():
+        for item in base.__dict__.values():
+            if isinstance(item, classmethod) and getattr(item.__func__, CASE_MARK, None) is True:
+                cases.append(item)
+
     return cases
 
 
@@ -61,6 +64,13 @@ class polymorphic[T]:  # noqa: N801
             bases=(node_class,),
             namespace=dict(__either__=tuple(case_nodes), __module__=node_class.__module__),
         )
+
+
+if typing.TYPE_CHECKING:
+    from builtins import classmethod as case
+
+else:
+    case = case_decorator
 
 
 __all__ = ("PolymorphicNode", "case", "collect_cases", "polymorphic")
