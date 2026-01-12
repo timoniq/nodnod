@@ -67,8 +67,8 @@ class Node[T = typing.Any, Root = typing.Any]:
 
             for name, dep_type in all_args.items():
                 if isinstance(dep_type, typing.ForwardRef):
-                    if (ann := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
-                        all_args[name] = ann
+                    if (initialized_ref := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
+                        all_args[name] = initialized_ref
                         continue
 
                     FORWARD_REF_REQUESTS[dep_type.__forward_arg__].append(cls)
