@@ -28,7 +28,11 @@ def get_none_node() -> type[Node]:
         name="NoneNode",
         base_node=Node,
         bases=tuple(),
-        namespace=dict(__dependencies__=set(), __compose__=lambda _: None),
+        namespace=dict(
+            __dependencies__=set(),
+            __injections__=set(),
+            __initialize__=lambda _: None,
+        ),
     )
 
 
