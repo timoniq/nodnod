@@ -48,7 +48,7 @@ class generic_node:  # noqa: N801
 
     def __new__[T: Composable](cls, composable: type[T], /) -> type[T]:
         return type(
-            composable.__name__ + ":" + "?",
+            composable.__name__ + "[?]",
             (cls,),
             dict(__node_cls__=composable, __module__=composable.__module__),
         )  # type: ignore

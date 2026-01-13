@@ -97,6 +97,7 @@ def create_node_from_function(
     sig_annotations = reverse_dict(resolve_signature(func).merge())
     names = _NameDict()
     dependencies = {dep_name: dep for dep_name, dep in dependencies.items() if is_node(dep)} if dependencies else {}
+    externals: set[str] = getattr(node, "__externals__", set())
 
     for dep_type, dep_name in sig_annotations.items():
         if dep_name in dependencies:
@@ -105,6 +106,9 @@ def create_node_from_function(
 
             if old_dependency is not None:
                 node.__dependencies__.remove(old_dependency)
+
+            if dep_name in externals:
+                externals.remove(dep_name)
 
             node.__dependencies__.add(new_dependency)
             names[new_dependency.__type__] = dep_name
