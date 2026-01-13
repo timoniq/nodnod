@@ -9,6 +9,7 @@ from nodnod.error import NodeBuildError
 from nodnod.interface.is_node import first_arg_is_node, is_node
 from nodnod.utils.create_node import create_node
 from nodnod.utils.is_type import is_type
+from nodnod.utils.repr_type import type_repr
 
 if typing.TYPE_CHECKING:
     from nodnod.node import Node
@@ -24,15 +25,20 @@ def is_option(dep_type: typing.Any, /) -> typing.TypeIs[type[Option[typing.Any]]
 def get_nothing_node() -> type[Node]:
     from nodnod.node import Node
 
-    return create_node(
+    node = create_node(
         name="NothingNode",
         base_node=Node,
         bases=tuple(),
         namespace=dict(
             __dependencies__=set(),
-            __compose__=lambda: NOTHING,
+            __injections__=set(),
+            __initialize__=lambda _: NOTHING,
+            __module__=__name__,
         ),
     )
+    setattr(node, "__traverse__", [node])
+    setattr(node, "__type__", node)
+    return node
 
 
 @cache
@@ -52,7 +58,7 @@ def create_option_node(option: type[Option[typing.Any]], /) -> type[Node]:
         namespace = dict(__injections__={arg_type}, __dependencies__=set())
 
     some_node = create_node(
-        name=f"SomeNode[{arg_type.__name__}]",
+        name=f"SomeNode[{type_repr(arg_type)}]",
         base_node=Node,
         bases=tuple(),
         namespace=dict(
@@ -62,7 +68,7 @@ def create_option_node(option: type[Option[typing.Any]], /) -> type[Node]:
         ),
     )
     return create_node(
-        name=f"OptionNode[{arg_type.__name__}]",
+        name=f"OptionNode[{type_repr(arg_type)}]",
         base_node=SequentialEither,
         bases=tuple(),
         namespace=dict(

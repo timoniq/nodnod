@@ -7,6 +7,7 @@ from nodnod.error import NodeBuildError
 from nodnod.interface.is_node import first_arg_is_node
 from nodnod.utils.create_node import create_node
 from nodnod.utils.is_type import is_type
+from nodnod.utils.repr_type import type_repr
 
 if typing.TYPE_CHECKING:
    from nodnod.interface.result_node import ResultNode
@@ -28,7 +29,7 @@ def create_result_node[T, Err: Exception](result: type[kungfu.Result[T, Err]]) -
    error_cls = args[1]
 
    return create_node(
-      name=f"ResultNode[{node_cls.__name__}, {error_cls.__name__}]",
+      name=f"ResultNode[{type_repr(node_cls)}, {type_repr(error_cls)}]",
       base_node=ResultNode,
       bases=(),
       namespace=dict(

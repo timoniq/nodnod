@@ -10,6 +10,7 @@ from nodnod.error import NodeBuildError
 from nodnod.interface.is_node import first_arg_is_node
 from nodnod.interface.option_node import create_option_node
 from nodnod.utils.create_node import create_node
+from nodnod.utils.repr_type import type_repr
 
 if typing.TYPE_CHECKING:
     from nodnod.node import Node
@@ -25,7 +26,8 @@ def is_union(obj: typing.Any, /) -> typing.TypeIs[types.UnionType]:
 @cache
 def get_none_node() -> type[Node]:
     from nodnod.node import Node
-    return create_node(
+
+    node = create_node(
         name="NoneNode",
         base_node=Node,
         bases=tuple(),
@@ -33,8 +35,12 @@ def get_none_node() -> type[Node]:
             __dependencies__=set(),
             __injections__=set(),
             __initialize__=lambda _: None,
+            __module__=__name__,
         ),
     )
+    setattr(node, "__traverse__", [node])
+    setattr(node, "__type__", node)
+    return node
 
 
 @cache
@@ -65,7 +71,7 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
             injected_types.add(arg)
 
     return create_node(
-        name="UnionNode[{}]".format(", ".join(str(arg) for arg in args)),
+        name="UnionNode[{}]".format(", ".join(type_repr(arg) for arg in args)),
         base_node=SequentialEither,
         bases=tuple(),
         namespace=dict(
