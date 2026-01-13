@@ -4,10 +4,12 @@ import kungfu
 from typing_extensions import ForwardRef
 
 from nodnod.builder.build_queue import build_queue
+from nodnod.error import NodeError
 from nodnod.interface.is_node import is_node
 from nodnod.node import ComposeResponse, Injection, Node, initialize_forward_refs, is_type
 from nodnod.utils.call import call_with_context
 from nodnod.utils.create_node import create_node
+from nodnod.utils.injection import get_injection_type
 from nodnod.utils.misc import reverse_dict
 from nodnod.utils.resolve_signature import resolve_signature
 from nodnod.value import Value
@@ -49,7 +51,13 @@ def initialize_node_with_externals(cls: type[Node], values: set[Value]) -> Compo
         if external_name in externals_value:
             compose_kwargs[external_name] = externals_value[external_name]
 
-    return call_with_context(cls.__compose__, compose_kwargs)
+    try:
+        return call_with_context(cls.__compose__, compose_kwargs)
+    except KeyError as error:
+        raise NodeError(
+            f"`{error.args[0]}` was not found in the externals. Inject it through `Externals`, "
+            "or, if it is a `Node` dependency, check its type.",
+        ) from None
 
 
 def create_node_from_function(
@@ -115,7 +123,7 @@ def create_node_from_function(
             continue
 
         if is_type(dep_type, Injection):
-            dep_type = typing.get_args(dep_type)[0]
+            dep_type = get_injection_type(dep_type, owner=func)
 
         if isinstance(dep_type, ForwardRef):
             dep_type = dep_type.__forward_arg__

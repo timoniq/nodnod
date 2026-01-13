@@ -6,6 +6,7 @@ from typing_extensions import ForwardRef
 
 from nodnod.error import NodeBuildError
 from nodnod.utils.call import call_with_context
+from nodnod.utils.injection import get_injection_type
 from nodnod.utils.is_type import is_type
 from nodnod.utils.misc import reverse_dict
 from nodnod.utils.resolve_signature import resolve_signature
@@ -47,9 +48,9 @@ class Node[T = typing.Any, Root = typing.Any]:
     ) -> None:
         from nodnod.builder.build_queue import build_queue
         from nodnod.interface.composable import Composable
-        from nodnod.interface.create_result_node import create_result_node
+        from nodnod.interface.create_result_node import create_result_node, is_result
         from nodnod.interface.generic import create_type_arg_node
-        from nodnod.interface.option_node import create_option_node
+        from nodnod.interface.option_node import create_option_node, is_option
         from nodnod.interface.union_node import create_union_node, is_union
         from nodnod.utils.create_node import create_node_from_composable
 
@@ -95,9 +96,9 @@ class Node[T = typing.Any, Root = typing.Any]:
                     dependency_nodes.add(create_node_from_composable(typing.cast("type[Composable]", all_args[dep_name])))
                 elif is_union(dep_type):
                     dependency_nodes.add(create_union_node(dep_type))
-                elif is_type(dep_type, kungfu.Option):
+                elif is_option(dep_type):
                     dependency_nodes.add(create_option_node(dep_type))
-                elif is_type(dep_type, kungfu.Result):
+                elif is_result(dep_type):
                     dependency_nodes.add(create_result_node(dep_type))
                 elif is_type(dep_type, type) or is_type(dep_type, tuple):
                     args = typing.get_args(dep_type)
@@ -130,7 +131,7 @@ class Node[T = typing.Any, Root = typing.Any]:
 
                     if not is_processed_by_hook:
                         if is_type(dep_type, Injection):
-                            dep_type = typing.get_args(dep_type)[0]
+                            dep_type = get_injection_type(dep_type, owner=cls.__compose__)
 
                         # Unresolved ForwardRef
                         if isinstance(dep_type, str | ForwardRef):

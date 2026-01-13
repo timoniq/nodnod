@@ -13,7 +13,7 @@ from nodnod.interface.node_from_function import (
 class TestCreateNodeFromFunction:
     def test_create_node_from_simple_function(self):
         def my_func() -> int:
-            return 42  # pragma: no cover
+            ...
 
         node = create_node_from_function(my_func)
 
@@ -26,10 +26,10 @@ class TestCreateNodeFromFunction:
         class DepNode:
             @classmethod
             def __compose__(cls) -> int:
-                return 10  # pragma: no cover
+                ...
 
         def my_func(dep: DepNode) -> int:
-            return dep * 2  # pragma: no cover
+            ...
 
         node = create_node_from_function(my_func)
 
@@ -37,13 +37,17 @@ class TestCreateNodeFromFunction:
         assert DepNode in node.__dependencies__
 
     def test_create_node_with_externals(self):
-        def func_with_external(name: str) -> str:
-            return f"Hello, {name}!"  # pragma: no cover
+        def func_with_external(name: str, age: int) -> str:
+            ...
 
-        node = create_node_from_function(func_with_external)
+        class Age(Node):
+            ...
+
+        node = create_node_from_function(func_with_external, dependencies={"age": Age})
 
         assert hasattr(node, "__externals__")
         assert "name" in getattr(node, "__externals__")
+        assert "age" not in getattr(node, "__externals__")
         assert Externals in node.__injections__
 
     @pytest.mark.asyncio
@@ -60,6 +64,17 @@ class TestCreateNodeFromFunction:
             result = scope[node].value
 
         assert result == 42
+
+    def test_node_from_function_initialize_error_on_missing_dependency(self):
+        from nodnod.error import NodeError
+
+        def func(x: int) -> int:
+            ...
+
+        node = create_node_from_function(func)
+
+        with pytest.raises(NodeError, match="`x` was not found in the externals. Inject it through `Externals`, or, if it is a `Node` dependency, check its type."):
+            node.__initialize__(set())
 
     @pytest.mark.asyncio
     async def test_node_from_function_with_node_dependency(self):
@@ -94,16 +109,16 @@ class TestCreateNodeFromFunction:
         class ANode:
             @classmethod
             def __compose__(cls) -> int:
-                ...  # pragma: no cover
+                ...
 
         @scalar_node
         class BNode:
             @classmethod
             def __compose__(cls) -> int:
-                ...  # pragma: no cover
+                ...
 
         def func(n: ANode) -> None:
-            ...  # pragma: no cover
+            ...
 
         node = create_node_from_function(func, dependencies={"n": BNode})  # type: ignore
         assert BNode in node.__dependencies__
@@ -115,7 +130,7 @@ class TestCreateAgentFromNode:
         class SimpleNode:
             @classmethod
             def __compose__(cls) -> int:
-                return 1  # pragma: no cover
+                ...
 
         agent = create_agent_from_node(SimpleNode)  # type: ignore
 
@@ -188,10 +203,10 @@ class TestNodeFromFunctionWithInjection:
         class Config:
             @classmethod
             def __compose__(cls) -> dict:
-                return {"key": "value"}  # pragma: no cover
+                ...
 
         def process(cfg: Config) -> str:
-            return str(cfg)  # pragma: no cover
+            ...
 
         node = create_node_from_function(process)
 
@@ -204,10 +219,10 @@ class TestNodeFromFunctionForwardRefs:
         class MyDep:
             @classmethod
             def __compose__(cls) -> int:
-                return 100  # pragma: no cover
+                ...
 
         def func_with_forward_ref(dep: "MyDep") -> int:
-            return dep  # pragma: no cover
+            ...
 
         node = create_node_from_function(
             func_with_forward_ref,
@@ -240,10 +255,10 @@ class TestCollectExternalsHook:
         class ConfigNode:
             @classmethod
             def __compose__(cls) -> dict:
-                return {}  # pragma: no cover
+                ...
 
         def func_with_injection(cfg: Injection[ConfigNode], name: str) -> str:
-            return f"{name}: {cfg}"  # pragma: no cover
+            ...
 
         node = create_node_from_function(func_with_injection)
 
@@ -256,7 +271,7 @@ class TestNodeFromFunctionErrors:
         from nodnod.node import FORWARD_REF_REQUESTS, INITIALIZED_FORWARD_REFS
 
         def func_with_node_ref(dep: "NonExistentNodeType") -> int:  # type: ignore
-            return dep  # pragma: no cover
+            ...
 
         original_refs = dict(INITIALIZED_FORWARD_REFS)
         original_reqs = dict(FORWARD_REF_REQUESTS)

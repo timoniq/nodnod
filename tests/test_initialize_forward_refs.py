@@ -22,7 +22,7 @@ class TestInitializeForwardRefs:
         class MockNode(Node):
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         initialize_forward_refs({"MockNode": MockNode})
 
@@ -42,7 +42,7 @@ class TestInitializeForwardRefs:
         class DependentTrackingNode(TrackingNode, abstract=True):
             @classmethod
             def __compose__(cls, dep: "TargetNode") -> None:
-                pass  # pragma: no cover
+                ...
 
         FORWARD_REF_REQUESTS["TargetNode"].append(DependentTrackingNode)
         init_subclass_called.clear()
@@ -50,7 +50,7 @@ class TestInitializeForwardRefs:
         class TargetNode(Node):
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         initialize_forward_refs({"TargetNode": TargetNode})
 
@@ -90,12 +90,12 @@ class TestInitializeForwardRefs:
         class TypeA(Node):
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         class TypeB(Node):
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         initialize_forward_refs({"TypeA": TypeA, "TypeB": TypeB})
 
@@ -115,7 +115,7 @@ class TestInitializeForwardRefs:
         class SharedType(Node):
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         FORWARD_REF_REQUESTS["SharedType"].append(DependentNode1)
         FORWARD_REF_REQUESTS["SharedType"].append(DependentNode2)
@@ -144,7 +144,7 @@ class TestInitializeForwardRefs:
         class FoundType(Node):
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         FORWARD_REF_REQUESTS["FoundType"].append(DependentNode1)
         FORWARD_REF_REQUESTS["ExternalType"].append(DependentNode2)

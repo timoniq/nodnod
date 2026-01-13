@@ -17,7 +17,7 @@ class TestCreateNodeFromComposable:
         class SimpleComposable:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(SimpleComposable)
@@ -35,12 +35,12 @@ class TestCreateNodeFromComposable:
         class DependencyComposable:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         class MainComposable:
             @classmethod
             def __compose__(cls, dep: DependencyComposable) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(MainComposable)
@@ -57,7 +57,7 @@ class TestCreateNodeFromComposable:
         class AsyncComposable:
             @classmethod
             async def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(AsyncComposable)
@@ -93,7 +93,7 @@ class TestCreateNodeFromComposable:
         class CachedComposable:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act - call twice
         node_class_1 = create_node_from_composable(CachedComposable)
@@ -108,12 +108,12 @@ class TestCreateNodeFromComposable:
         class ComposableA:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         class ComposableB:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class_a = create_node_from_composable(ComposableA)
@@ -134,7 +134,7 @@ class TestCreateNodeFromComposable:
 
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(ModuleComposable)
@@ -148,7 +148,7 @@ class TestCreateNodeFromComposable:
         class InheritanceComposable:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(InheritanceComposable)
@@ -163,7 +163,7 @@ class TestCreateNodeFromComposable:
         class NameTestComposable:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(NameTestComposable)
@@ -183,8 +183,8 @@ class TestCreateNodeFromComposable:
                 *args: typing.Any,
                 keyword_param: bool = False,
                 **kwargs: typing.Any,
-            ) -> None:  # pragma: no cover
-                pass
+            ) -> None:
+                ...
 
         # Act
         node_class = create_node_from_composable(ComplexComposable)
@@ -199,7 +199,7 @@ class TestCreateNodeFromComposable:
         class GenericComposable:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(GenericComposable)
@@ -216,7 +216,7 @@ class TestCreateNodeFromComposable:
 
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(AttributeComposable)
@@ -240,7 +240,7 @@ class TestCreateNodeFromComposable:
             class SameName:
                 @classmethod
                 def __compose__(cls) -> None:
-                    pass  # pragma: no cover
+                    ...
 
             return SameName
 
@@ -248,7 +248,7 @@ class TestCreateNodeFromComposable:
             class SameName:
                 @classmethod
                 def __compose__(cls) -> None:
-                    pass  # pragma: no cover
+                    ...
 
             return SameName
 
@@ -270,7 +270,7 @@ class TestCreateNodeFromComposable:
         class NoAnnotationComposable:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(NoAnnotationComposable)
@@ -289,7 +289,7 @@ class TestCreateNodeFromComposable:
 
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(ComposableWithVars)
@@ -311,7 +311,7 @@ class TestCreateNodeFromComposable:
 
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(ComposableWithStatic)
@@ -330,12 +330,12 @@ class TestCreateNodeFromComposable:
 
             @classmethod
             def base_method(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         class DerivedComposable(BaseComposable):
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(DerivedComposable)
@@ -351,7 +351,7 @@ class TestCreateNodeFromComposable:
         class CacheTestComposable:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act - create node multiple times
         node_class_1 = create_node_from_composable(CacheTestComposable)
@@ -374,7 +374,7 @@ class TestCreateNodeFromComposable:
         class InitTestComposable:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Act
         node_class = create_node_from_composable(InitTestComposable)
@@ -393,7 +393,7 @@ class TestCreateNodeFromComposable:
         class GenericComposable[T]:
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         node_class1 = create_node_from_composable(GenericComposable[str])
         node_class2 = create_node_from_composable(GenericComposable[int])
@@ -404,7 +404,7 @@ class TestCreateNodeFromComposable:
         class AsyncComposable:
             @classmethod
             async def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         node_class = create_node_from_composable(AsyncComposable)
         assert issubclass(node_class, Node)

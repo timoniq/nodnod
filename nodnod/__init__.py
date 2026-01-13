@@ -2,7 +2,7 @@ from .agent import Agent, EventLoopAgent
 from .compose import compose_node
 from .error import NodeError
 from .interface import *
-from .node import Node
+from .node import Injection, Node
 from .scope import Scope
 from .value import Value
 
@@ -11,6 +11,7 @@ __all__ = (
     "ConcurrentEither",
     "DataNode",
     "EventLoopAgent",
+    "Injection",
     "Node",
     "NodeError",
     "compose_node",

@@ -30,7 +30,7 @@ class ErrorNode(Node):
 
     @classmethod
     def __compose__(cls):
-        raise ValueError("Test error")  # pragma: no cover
+        ...
 
 
 class TestResultNode(ResultNode):

@@ -6,13 +6,18 @@ from functools import cache
 from kungfu import Nothing, Option, Some
 
 from nodnod.error import NodeBuildError
-from nodnod.interface.is_node import is_node
+from nodnod.interface.is_node import first_arg_is_node, is_node
 from nodnod.utils.create_node import create_node
+from nodnod.utils.is_type import is_type
 
 if typing.TYPE_CHECKING:
     from nodnod.node import Node
 
 NOTHING: typing.Final = Nothing()
+
+
+def is_option(dep_type: typing.Any, /) -> typing.TypeIs[type[Option[typing.Any]]]:
+    return is_type(dep_type, Option) and first_arg_is_node(dep_type)
 
 
 @cache
@@ -69,4 +74,4 @@ def create_option_node(option: type[Option[typing.Any]], /) -> type[Node]:
     )
 
 
-__all__ = ("create_option_node",)
+__all__ = ("create_option_node", "is_option")

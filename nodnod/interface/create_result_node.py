@@ -4,10 +4,16 @@ from functools import cache
 import kungfu
 
 from nodnod.error import NodeBuildError
+from nodnod.interface.is_node import first_arg_is_node
 from nodnod.utils.create_node import create_node
+from nodnod.utils.is_type import is_type
 
 if typing.TYPE_CHECKING:
    from nodnod.interface.result_node import ResultNode
+
+
+def is_result(dep_type: typing.Any, /) -> typing.TypeIs[type[kungfu.Result[typing.Any, typing.Any]]]:
+   return is_type(dep_type, kungfu.Result) and first_arg_is_node(dep_type)
 
 
 @cache
@@ -34,4 +40,4 @@ def create_result_node[T, Err: Exception](result: type[kungfu.Result[T, Err]]) -
    )
 
 
-__all__ = ("create_result_node",)
+__all__ = ("create_result_node", "is_result")

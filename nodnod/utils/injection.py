@@ -2,12 +2,9 @@ import typing
 
 from typing_extensions import Format, ForwardRef, evaluate_forward_ref
 
-if typing.TYPE_CHECKING:
-    from nodnod.node import Injection
-
 
 def get_injection_type(
-    injection: type[Injection[typing.Any]],
+    injection: typing.Any,
     /,
     *,
     owner: typing.Any | None = None,
@@ -15,7 +12,7 @@ def get_injection_type(
     args = typing.get_args(injection)
 
     if len(args) != 1:
-        raise ValueError("Injection must have at least one type argument.")
+        raise ValueError("Injection must have exactly one type argument.")
 
     arg = args[0]
 

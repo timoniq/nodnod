@@ -4,7 +4,7 @@ from nodnod.utils.resolve_signature import Signature, resolve_signature
 class TestResolveSignature:
     def test_resolve_signature_simple_function(self):
         def simple_func(a: int, /, b: str, *, c: bool = False) -> None:
-            pass  # pragma: no cover
+            ...
 
         sig = resolve_signature(simple_func)
         assert isinstance(sig, Signature)
@@ -17,7 +17,7 @@ class TestResolveSignature:
 
     def test_resolve_signature_with_defaults(self):
         def func_with_defaults(a: int, b: str = "default") -> None:
-            pass  # pragma: no cover
+            ...
 
         sig = resolve_signature(func_with_defaults)
         assert "a" in sig.kwargs
@@ -27,7 +27,7 @@ class TestResolveSignature:
     def test_resolve_signature_ignore_bound_parameters(self):
         class TestClass:
             def method(self, a: int, b: str) -> None:
-                pass  # pragma: no cover
+                ...
 
         sig = resolve_signature(TestClass.method, ignore_bound_parameters=True)
         # Should ignore 'self'
@@ -39,7 +39,7 @@ class TestResolveSignature:
         class TestClass:
             @classmethod
             def class_method(cls, a: int, b: str) -> None:
-                pass  # pragma: no cover
+                ...
 
         sig = resolve_signature(TestClass.class_method, ignore_bound_parameters=True)
         # Should ignore 'cls'
@@ -48,7 +48,7 @@ class TestResolveSignature:
 
     def test_signature_get_all_types(self):
         def func(a: int, b: str, c: bool = True) -> None:
-            pass  # pragma: no cover
+            ...
 
         sig = resolve_signature(func)
         all_types = sig.get_all_types()
@@ -61,7 +61,7 @@ class TestResolveSignature:
         class TestClass:
             @staticmethod
             def static_method(a: int, b: str) -> None:
-                pass  # pragma: no cover
+                ...
 
         sig = resolve_signature(TestClass.static_method)
         assert "a" in sig.kwargs
@@ -74,7 +74,7 @@ class TestResolveSignature:
         class TestNode:
             @classmethod
             def __compose__(cls, a: int, b: str) -> None:
-                pass  # pragma: no cover
+                ...
 
         # Test that framework can resolve signatures of node compositions
         sig = resolve_signature(TestNode.__compose__, ignore_bound_parameters=True)

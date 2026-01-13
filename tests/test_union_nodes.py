@@ -8,11 +8,13 @@ from nodnod.interface.union_node import create_union_node, is_union
 
 
 class TestUnionNodes:
-    def test_is_union_true(self):
-        union_type = typing.Union[int, str]
-        assert is_union(union_type)
+    def test_is_union(self):
+        class Test(Node, abstract=True):
+            ...
 
-    def test_is_union_false(self):
+        assert is_union(Test | None)
+        assert not is_union(typing.Union)
+        assert not is_union(int | Node)
         assert not is_union(int)
         assert not is_union(str)
 

@@ -7,6 +7,7 @@ from functools import cache
 import kungfu
 
 from nodnod.error import NodeBuildError
+from nodnod.interface.is_node import first_arg_is_node
 from nodnod.interface.option_node import create_option_node
 from nodnod.utils.create_node import create_node
 
@@ -18,7 +19,7 @@ UNION_TYPES: typing.Final = frozenset((typing.Union, types.UnionType))
 
 
 def is_union(obj: typing.Any, /) -> typing.TypeIs[types.UnionType]:
-    return typing.get_origin(obj) in UNION_TYPES
+    return (typing.get_origin(obj) or obj) in UNION_TYPES and first_arg_is_node(obj)
 
 
 @cache
@@ -77,4 +78,4 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
     )
 
 
-__all__ = ("create_union_node",)
+__all__ = ("create_union_node", "is_union")

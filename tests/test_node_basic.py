@@ -23,14 +23,14 @@ class TestBasicNode:
         class NodeB(Node):
             @classmethod
             def __compose__(cls, a: NodeA) -> None:
-                pass  # pragma: no cover
+                ...
 
         assert NodeA in NodeB.__dependencies__
 
     def test_scalar_node_decorator_on_function(self):
         @scalar_node
         def my_function() -> None:
-            pass  # pragma: no cover
+            ...
 
         assert issubclass(my_function, Node)
 
@@ -44,7 +44,7 @@ class TestDataNode:
 
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         assert issubclass(TestData, DataNode)
         assert issubclass(TestData, Node)
@@ -55,7 +55,7 @@ class TestNodeErrorForwardRefDependency:
         class NodeA(Node):
             @classmethod
             def __compose__(cls, dep: "Dummy") -> None:  # type: ignore
-                pass  # pragma: no cover
+                ...
 
         INITIALIZED_FORWARD_REFS["Dummy"] = "Dummy"  # Cannot resolve forward ref, so it still is a ForwardRef
 
