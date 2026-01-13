@@ -82,7 +82,7 @@ def test_generic_node_creation():
 
     GenericTestNode = generic_node(_ComposableWithOneGeneric)
 
-    assert GenericTestNode.__name__ == "_ComposableWithOneGeneric:?"
+    assert GenericTestNode.__name__ == "_ComposableWithOneGeneric:[?]"
     assert GenericTestNode.__node_cls__ is _ComposableWithOneGeneric
 
 
