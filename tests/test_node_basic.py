@@ -57,10 +57,9 @@ class TestNodeErrorForwardRefDependency:
             def __compose__(cls, dep: "Dummy") -> None:  # type: ignore
                 ...
 
-        INITIALIZED_FORWARD_REFS["Dummy"] = "Dummy"  # Cannot resolve forward ref, so it still is a ForwardRef
+        INITIALIZED_FORWARD_REFS["Dummy"] = "Dummy"
 
         with pytest.raises(LookupError, match=r"^Unresolved dependency for `dep` of `NodeA`, it looks like a `ForwardRef` that could not be resolved\.$"):
-            # Try to initialize the node, it should raise an error
             NodeA.__init_subclass__()
 
 

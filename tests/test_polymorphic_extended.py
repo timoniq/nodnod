@@ -8,12 +8,10 @@ from nodnod.interface.polymorphic import case, polymorphic
 class TestPolymorphicExtended:
     def test_case_decorator_with_regular_method(self):
         decorated = case(lambda cls: None)
-        # Should convert to classmethod
         assert isinstance(decorated, classmethod)
 
     def test_case_decorator_with_classmethod(self):
         decorated = case(classmethod(lambda cls: None))
-        # Should remain classmethod
         assert isinstance(decorated, classmethod)
 
     @pytest.mark.asyncio
@@ -25,13 +23,10 @@ class TestPolymorphicExtended:
                 return 42
 
         class NonScalarConverter(Node, abstract=True):
-            # Remove is_scalar to make it non-scalar
-
             @case
             def from_int(cls, value: IntSource) -> str:
                 return f"Number: {value}"
 
-        # Apply polymorphic decorator
         PolyConverter = polymorphic[str](NonScalarConverter)
 
         agent = EventLoopAgent.build({PolyConverter})

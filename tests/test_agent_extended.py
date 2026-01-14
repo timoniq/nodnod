@@ -13,7 +13,6 @@ class TestEventLoopAgentExtended:
             def __compose__(cls) -> int:
                 return 42
 
-        # Create agent with duplicated nodes to hit the continue path
         agent = EventLoopAgent([TestNode, TestNode], final_nodes={TestNode})
         scope = Scope(detail="test")
 

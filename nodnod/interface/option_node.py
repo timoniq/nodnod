@@ -6,8 +6,8 @@ from functools import cache
 from kungfu import Nothing, Option, Some
 
 from nodnod.error import NodeBuildError
-from nodnod.interface.is_node import first_arg_is_node, is_node
-from nodnod.utils.create_node import create_node
+from nodnod.interface.is_node import first_arg_is_composable, is_node
+from nodnod.utils.create_node import create_node, create_node_from_composable
 from nodnod.utils.is_type import is_type
 from nodnod.utils.repr_type import type_repr
 
@@ -18,7 +18,7 @@ NOTHING: typing.Final = Nothing()
 
 
 def is_option(dep_type: typing.Any, /) -> typing.TypeIs[type[Option[typing.Any]]]:
-    return is_type(dep_type, Option) and first_arg_is_node(dep_type)
+    return is_type(dep_type, Option) and first_arg_is_composable(dep_type)
 
 
 @cache
@@ -43,20 +43,15 @@ def get_nothing_node() -> type[Node]:
 
 @cache
 def create_option_node(option: type[Option[typing.Any]], /) -> type[Node]:
+    from nodnod.builder.build_queue import build_queue
     from nodnod.interface.either import SequentialEither
     from nodnod.node import Node
 
     args = typing.get_args(option)
-    if not args:
+    if len(args) != 1:
         raise NodeBuildError("Option must have exactly one type argument.")
 
-    arg_type = args[0]
-
-    if is_node(typing.get_origin(arg_type) or arg_type):
-        namespace = dict(__injections__=set(), __dependencies__={arg_type})
-    else:
-        namespace = dict(__injections__={arg_type}, __dependencies__=set())
-
+    arg_type = args[0] if is_node(args[0]) else create_node_from_composable(args[0])
     some_node = create_node(
         name=f"SomeNode[{type_repr(arg_type)}]",
         base_node=Node,
@@ -64,9 +59,12 @@ def create_option_node(option: type[Option[typing.Any]], /) -> type[Node]:
         namespace=dict(
             __initialize__=lambda values: Some(tuple(values)[0].value),
             __module__=__name__,
-            **namespace,
+            __injections__=set(),
+            __dependencies__={arg_type},
         ),
     )
+    setattr(some_node, "__traverse__", build_queue(some_node, list()))
+    setattr(some_node, "__type__", some_node)
     return create_node(
         name=f"OptionNode[{type_repr(arg_type)}]",
         base_node=SequentialEither,

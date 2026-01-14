@@ -12,7 +12,7 @@ class TestValueExtended:
             yield 2
 
         gen = sync_gen()
-        next(gen)  # Start generator
+        next(gen)
 
         value = Value(int, 42, generator=gen)
         result = value.close()
@@ -27,12 +27,11 @@ class TestValueExtended:
             yield 2
 
         gen = async_gen()
-        await gen.__anext__()  # Start generator
+        await gen.__anext__()
 
         value = Value(int, 42, generator=gen)
         result = await value.close()
 
-        # Generator should be closed
         assert value.generator is None
 
     def test_value_repr_with_generator(self):

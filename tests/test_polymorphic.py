@@ -45,15 +45,13 @@ class TestPolymorphic:
             def from_string(cls, s: StringSource) -> str:
                 return s.upper()
 
-        # Test with string source
-        agent = EventLoopAgent.build({MultiConverter, StringSource})
+        agent = EventLoopAgent.build({MultiConverter: MultiConverter, StringSource: StringSource})
         scope = Scope(detail="test")
 
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(MultiConverter)
             assert kungfu.is_some(result)
-            # Should use the string case since StringSource is available
             assert result.unwrap().value == "HELLO"
 
 

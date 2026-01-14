@@ -24,21 +24,23 @@ def repr_node_error(node_error: NodeError, indent: int = 0) -> str:
 
 class NodeError(Exception):
     def __init__(
-        self, 
-        *detail: typing.Any, 
+        self,
+        *detail: typing.Any,
         from_error: NodeError | None = None,
         from_many: typing.Sequence[NodeError] | None = None,
+        indent: int = 0,
     ) -> None:
         if from_error and from_many:
             raise RuntimeError("NodeError can either have from_error or from_many")
 
         self.detail = " ".join(map(str, detail))
+        self.indent = indent
         self.from_error = from_error
         self.from_many = from_many
 
     def __str__(self) -> str:
-        return "\n\n" + repr_node_error(self)
-    
+        return "\n\n" + repr_node_error(self, indent=self.indent)
+
 
 class NodeBuildError(NodeError):
     pass

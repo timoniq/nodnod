@@ -19,9 +19,7 @@ class TestUnionNodes:
         assert not is_union(str)
 
     def test_create_union_node(self):
-        union_type = typing.Union[
-            Node[int], Node[str]
-        ]  # FIXME: typing.Union[Node, Node] not seeing type arguments
+        union_type = typing.Union[Node, Node[str]]
         union_node = create_union_node(union_type)
 
         assert issubclass(union_node, Node)
@@ -48,12 +46,11 @@ class TestUnionNodes:
                 assert isinstance(value, int)
                 return f"Got int: {value}"
 
-        agent = EventLoopAgent.build({ConsumerNode})
+        agent = EventLoopAgent.build({ConsumerNode})  # type: ignore
         scope = Scope(detail="test")
 
         async with scope:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(ConsumerNode)
             assert kungfu.is_some(result)
-            # Should get one of the union values
             assert "Got" in result.unwrap().value
