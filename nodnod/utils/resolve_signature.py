@@ -112,7 +112,11 @@ def resolve_signature(
     if isinstance(callable, classmethod | staticmethod):
         callable = callable.__func__  # type: ignore
 
-    sig = inspect.signature(callable)
+    if sys.version_info >= (3, 14):  # pragma: no cover
+        sig = inspect.signature(callable, annotation_format=Format.STRING)
+    else:  # pragma: no cover
+        sig = inspect.signature(callable)
+
     hints = resolve_callable_annotations(callable, bound_class=bound_class)
     args = {}
     kwargs = {}
@@ -127,12 +131,10 @@ def resolve_signature(
         if param.default is not param.empty:
             optionals.add(name)
 
-        if param.kind == inspect.Parameter.VAR_POSITIONAL:
-            var_positional = param
-            continue
-
-        if param.kind == inspect.Parameter.VAR_KEYWORD:
-            var_keyword = param
+        if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+            param._annotation = hints.get(name, getattr(param, "_annotation", typing.Any))
+            var_positional = param if param.kind == inspect.Parameter.VAR_POSITIONAL else var_positional
+            var_keyword = param if param.kind == inspect.Parameter.VAR_KEYWORD else var_keyword
             continue
 
         typ = hints.get(name, typing.Any)

@@ -113,12 +113,12 @@ def create_node_from_function(
 
     node.__injections__.add(Externals)
 
-    sig_annotations = reverse_dict(resolve_signature(func).merge())
     dependencies = {dep_name: dep for dep_name, dep in dependencies.items() if is_node(dep)} if dependencies else {}
     externals: set[str] = getattr(node, "__externals__", set())
     names: dict[typing.Any, str] = getattr(node, "__names__", _NameDict())
+    reversed_names = reverse_dict(names)
 
-    for dep_type, dep_name in sig_annotations.items():
+    for dep_name, dep_type in resolve_signature(func).merge().items():
         if dep_name in dependencies:
             new_dependency = dependencies[dep_name]
             old_dependency = next((dep for dep in node.__dependencies__ if dep.__type__ is dep_type), None)
@@ -137,6 +137,9 @@ def create_node_from_function(
             dep_type = get_injection_type(dep_type, owner=func)
 
         if isinstance(dep_type, ForwardRef):
+            if dep_name in reversed_names:
+                continue
+
             dep_type = dep_type.__forward_arg__
 
         names[dep_type] = dep_name
@@ -158,6 +161,9 @@ class ExternalDependency:
 
     def __str__(self) -> str:
         return self.name
+
+    def __hash__(self) -> int:
+        return hash(self.name)
 
 
 class _NameDict(dict[typing.Any, str]):
