@@ -19,7 +19,7 @@ type LikeNode = typing.Any
 NODE_NAMESPACE: typing.Final = frozenset({k for k in Node.__dict__ if k not in type(Node).__dict__})
 
 
-def collect_externals_hook(
+def collect_externals_and_names_hook(
     node: type[Node],
     dep_name: str,
     dep_type: typing.Any,
@@ -29,6 +29,12 @@ def collect_externals_hook(
 
     if not hasattr(node, "__externals__"):
         setattr(node, "__externals__", set())
+
+    if not hasattr(node, "__names__"):
+        setattr(node, "__names__", _NameDict())
+
+    if isinstance(dep_type, ExternalDependency):
+        getattr(node, "__names__")[dep_type] = dep_name
 
     getattr(node, "__externals__").add(dep_name)
     return kungfu.Ok()
@@ -54,9 +60,15 @@ def initialize_node_with_externals(cls: type[Node], values: set[Value]) -> Compo
     try:
         return call_with_context(cls.__compose__, compose_kwargs)
     except KeyError as error:
+        dep_name = error.args[0]
         raise NodeError(
-            f"`{error.args[0]}` was not found in the externals. Inject it through `Externals`, "
-            "or, if it is a `Node` dependency, check its type.",
+            "`{}` was not found in the externals. Inject it through `Externals`, "
+            "or, if it is a `Node` dependency, check its type.{}".format(
+                dep_name,
+                f"\n  * type of `{dep_name}` is unresolved `ForwardRef`, so it automatically becomes an external dependency."
+                if dep_name in names and isinstance(names[dep_name], ExternalDependency)
+                else f" ({dep_name}: {names[dep_name]})" if dep_name in names else "",
+            ),
         ) from None
 
 
@@ -88,8 +100,7 @@ def create_node_from_function(
         Node,
         bases=bases,
         namespace={"__compose__": func, "__module__": module or getattr(func, "__module__", "<module>")} | namespace,
-        injection_hooks=(collect_externals_hook,),
-        is_from_function=True,
+        injection_hooks=(collect_externals_and_names_hook,),
     )
 
     if forward_refs is not None:
@@ -98,14 +109,14 @@ def create_node_from_function(
         initialize_forward_refs(getattr(func, "__globals__", {}), is_from_function=True)
 
     if node.__injections__ is None:
-        node.__init_subclass__(injection_hooks=(collect_externals_hook,), is_from_function=True)
+        node.__init_subclass__(injection_hooks=(collect_externals_and_names_hook,))
 
     node.__injections__.add(Externals)
 
     sig_annotations = reverse_dict(resolve_signature(func).merge())
-    names = _NameDict()
     dependencies = {dep_name: dep for dep_name, dep in dependencies.items() if is_node(dep)} if dependencies else {}
     externals: set[str] = getattr(node, "__externals__", set())
+    names: dict[typing.Any, str] = getattr(node, "__names__", _NameDict())
 
     for dep_type, dep_name in sig_annotations.items():
         if dep_name in dependencies:
@@ -130,6 +141,7 @@ def create_node_from_function(
 
         names[dep_type] = dep_name
 
+    setattr(node, "__externals__", externals)
     setattr(node, "__names__", names)
     setattr(node, "__traverse__", build_queue(node, list()))
     setattr(node, "__initialize__", initialize_node_with_externals)
@@ -138,6 +150,14 @@ def create_node_from_function(
 
 class Externals(dict[str, typing.Any]):
     pass
+
+
+class ExternalDependency:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class _NameDict(dict[typing.Any, str]):

@@ -57,6 +57,8 @@ class TestInitializeForwardRefs:
         assert DependentTrackingNode in init_subclass_called
 
     def test_initialize_forward_refs_external_dependency_when_from_function(self):
+        from nodnod.interface.node_from_function import ExternalDependency
+
         class DependentNode(Node, abstract=True):
             pass
 
@@ -65,7 +67,8 @@ class TestInitializeForwardRefs:
         initialize_forward_refs({}, is_from_function=True)
 
         assert "UnknownType" in INITIALIZED_FORWARD_REFS
-        assert INITIALIZED_FORWARD_REFS["UnknownType"] == "UnknownType"
+        assert isinstance(INITIALIZED_FORWARD_REFS["UnknownType"], ExternalDependency)
+        assert str(INITIALIZED_FORWARD_REFS["UnknownType"]) == "UnknownType"
         assert "UnknownType" not in FORWARD_REF_REQUESTS
 
     def test_initialize_forward_refs_raises_lookup_error_when_not_from_function(self):
@@ -135,6 +138,8 @@ class TestInitializeForwardRefs:
         assert len(FORWARD_REF_REQUESTS) == 0
 
     def test_initialize_forward_refs_mixed_found_and_external(self):
+        from nodnod.interface.node_from_function import ExternalDependency
+
         class DependentNode1(Node, abstract=True):
             pass
 
@@ -152,4 +157,5 @@ class TestInitializeForwardRefs:
         initialize_forward_refs({"FoundType": FoundType}, is_from_function=True)
 
         assert INITIALIZED_FORWARD_REFS["FoundType"] is FoundType
-        assert INITIALIZED_FORWARD_REFS["ExternalType"] == "ExternalType"
+        assert isinstance(INITIALIZED_FORWARD_REFS["ExternalType"], ExternalDependency)
+        assert str(INITIALIZED_FORWARD_REFS["ExternalType"]) == "ExternalType"

@@ -24,12 +24,34 @@ type InjectionHook = typing.Callable[["type[Node]", str, typing.Any], kungfu.Pul
 FORWARD_REF_REQUESTS = collections.defaultdict[str, list["type[Node]"]](list)
 INITIALIZED_FORWARD_REFS: dict[str, typing.Any] = {}
 
-ExternalDependency = typing.NewType("ExternalDependency", str)
-
 
 @classmethod
 def dummy_compose(cls: type[typing.Any]) -> typing.NoReturn:
     raise RuntimeError(f"`{cls.__name__}` does not provide `__compose__`. Maybe it should be abstract=True?")
+
+
+def initialize_forward_refs(
+    forward_refs: dict[str, typing.Any],
+    *,
+    is_from_function: bool = False,
+) -> None:
+    from nodnod.interface.node_from_function import ExternalDependency
+
+    while FORWARD_REF_REQUESTS:
+        type_name, forward_ref_request = FORWARD_REF_REQUESTS.popitem()
+
+        if type_name in forward_refs:
+            INITIALIZED_FORWARD_REFS[type_name] = forward_refs[type_name]
+
+            for dependency in forward_ref_request:
+                dependency.__init_subclass__()
+        elif is_from_function:
+            # Mark it as ExternalDependency because this is a ForwardRef to a type that could not be found among
+            # nodes or in the modules from globals. Probably it is defined inside a TYPE_CHECKING block.
+            INITIALIZED_FORWARD_REFS[type_name] = ExternalDependency(type_name)
+        else:
+            # Otherwise, the node cannot have external dependencies, so it should raise an error
+            raise LookupError(f"Dependency `{type_name}` not found")
 
 
 class Node[T = typing.Any, Root = typing.Any]:
@@ -44,7 +66,6 @@ class Node[T = typing.Any, Root = typing.Any]:
         cls,
         abstract: bool = False,
         injection_hooks: tuple[InjectionHook, ...] = (),
-        is_from_function: bool = False,
     ) -> None:
         from nodnod.builder.build_queue import build_queue
         from nodnod.interface.composable import Composable
@@ -182,28 +203,6 @@ class Node[T = typing.Any, Root = typing.Any]:
 
     def __repr__(self) -> str:
         return f"<node `{type(self).__name__}`>"
-
-
-def initialize_forward_refs(
-    forward_refs: dict[str, typing.Any],
-    *,
-    is_from_function: bool = False,
-) -> None:
-    while FORWARD_REF_REQUESTS:
-        type_name, forward_ref_request = FORWARD_REF_REQUESTS.popitem()
-
-        if type_name in forward_refs:
-            INITIALIZED_FORWARD_REFS[type_name] = forward_refs[type_name]
-
-            for dependency in forward_ref_request:
-                dependency.__init_subclass__()
-        elif is_from_function:
-            # Mark it as ExternalDependency because this is a ForwardRef to a type that could not be found among
-            # nodes or in the modules from globals. Probably it is defined inside a TYPE_CHECKING block.
-            INITIALIZED_FORWARD_REFS[type_name] = ExternalDependency(type_name)
-        else:
-            # Otherwise, the node cannot have external dependencies, so it should raise an error
-            raise LookupError(f"Dependency `{type_name}` not found")
 
 
 __all__ = ("Injection", "Node", "Queue")
