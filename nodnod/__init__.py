@@ -12,6 +12,7 @@ __all__ = (
     "DataNode",
     "EventLoopAgent",
     "Injection",
+    "NodeConstructor",
     "Node",
     "NodeError",
     "compose_node",

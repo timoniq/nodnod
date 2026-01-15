@@ -4,6 +4,7 @@ from nodnod.interface.data import DataNode
 from nodnod.interface.either import ConcurrentEither, SequentialEither
 from nodnod.interface.generic import generic_node
 from nodnod.interface.inject import inject_externals, inject_internals
+from nodnod.interface.node_constructor import NodeConstructor
 from nodnod.interface.node_from_function import Externals, create_node_from_function
 from nodnod.interface.polymorphic import case, polymorphic
 from nodnod.interface.result_node import ResultNode
@@ -12,6 +13,7 @@ from nodnod.interface.scalar import scalar_node
 __all__ = (
     "ConcurrentEither",
     "DataNode",
+    "NodeConstructor",
     "inject_externals",
     "inject_internals",
     "ResultNode",
