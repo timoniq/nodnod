@@ -5,9 +5,11 @@ import typing
 import kungfu
 
 from nodnod import (
+    Annotate,
     DataNode,
     EventLoopAgent,
     Node,
+    NodeConstructor,
     NodeError,
     Scope,
     SequentialEither,
@@ -126,8 +128,30 @@ class LOL:
         return x.upper() * mi + "d"
 
 
+@scalar_node
+class Jackpot:
+    @classmethod
+    def __compose__(cls) -> int:
+        return 777
+
+
+class MultiplyBy(NodeConstructor):
+    def __init__(self, multiplier: int = 5) -> None:
+        self.multiplier = multiplier
+
+    def __compose__(self, jackpot: Jackpot) -> int:
+        return 123 * self.multiplier + jackpot
+
+
+@scalar_node
+class Sum:
+    @classmethod
+    def __compose__(cls, a: Annotate[int, MultiplyBy], b: Annotate[int, MultiplyBy[10]]) -> int:
+        return a + b
+
+
 async def main():
-    agent = EventLoopAgent.build({TypeArgs[int, str], LOL, C, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
+    agent = EventLoopAgent.build({TypeArgs[int, str], LOL, C, Lolik[str, float, str], Lolik[int, str, int], Sum})  # type: ignore
 
     global_scope = Scope(detail="global")
     global_scope.push(Value(Interface, MyInterface()))

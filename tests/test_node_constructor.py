@@ -3,173 +3,168 @@ import typing
 import pytest
 
 from nodnod import Scope
-from nodnod.interface.node_constructor import NodeConstructor, _Constructor
+from nodnod.interface.node_constructor import NodeConstructor, initialize_node_constructor
 from nodnod.agent.event_loop.agent import EventLoopAgent
+from nodnod.value import Value
+
+
+class TestInitializeNodeConstructor:
+    def test_initialize_node_constructor_basic(self):
+        def compose(context: dict[str, typing.Any]) -> int:
+            return context.get("x", 0) * 2
+
+        names_by_type = {int: "x"}
+        values = {Value(int, 21)}
+
+        result = initialize_node_constructor(compose, names_by_type, values)
+        assert result == 42
+
+    def test_initialize_node_constructor_filters_unknown_types(self):
+        def compose(context: dict[str, typing.Any]) -> int:
+            return context.get("x", 100)
+
+        names_by_type = {int: "x"}
+        values = {Value(str, "ignored"), Value(int, 5)}
+
+        result = initialize_node_constructor(compose, names_by_type, values)
+        assert result == 5
 
 
 class TestNodeConstructorBasic:
-    def test_node_constructor_creates_constructor_class(self):
+    def test_node_constructor_sets_initialize(self):
         class MyConstructor(NodeConstructor):
-            @classmethod
-            def __construct__(cls) -> int:
+            def __compose__(self) -> int:
                 ...
 
-        assert MyConstructor.__constructor__ is not None
-        assert issubclass(MyConstructor.__constructor__, _Constructor)
-        assert MyConstructor.__constructor__ in MyConstructor.__dependencies__
+        assert MyConstructor.__initialize__ is not None
 
-    def test_node_constructor_abstract_does_not_create_constructor(self):
+    def test_node_constructor_abstract_inherits_from_node(self):
         class AbstractConstructor(NodeConstructor, abstract=True):
             pass
 
-        assert AbstractConstructor.__constructor__ is None
-
-    def test_constructor_not_implemented_raises(self):
-        with pytest.raises(NotImplementedError, match="`__construct__` method must be implemented"):
-            NodeConstructor.__construct__()
-
-    def test_init_subclass_sets_injections(self):
-        class SimpleConstructor(NodeConstructor):
-            @classmethod
-            def __construct__(cls) -> int:
-                ...
-
-        assert SimpleConstructor.__constructor__ in SimpleConstructor.__injections__
+        assert issubclass(AbstractConstructor, NodeConstructor)
 
 
 class TestNodeConstructorExecution:
     @pytest.mark.asyncio
     async def test_constructor_compose_via_agent(self):
         class Counter(NodeConstructor):
-            @classmethod
-            def __construct__(cls) -> int:
+            def __compose__(self) -> int:
                 return 100
 
-        constructor = Counter.__constructor__
-        agent = EventLoopAgent.build({constructor})
+        agent = EventLoopAgent.build({Counter})
 
         async with Scope(detail="test") as scope:
             await agent.run(scope, mapped_scopes={})
-            result = scope[constructor].value
+            result = scope[Counter].value
 
         assert result == 100
+
+    @pytest.mark.asyncio
+    async def test_constructor_with_init_args(self):
+        class Multiplier(NodeConstructor):
+            def __init__(self, factor: int):
+                self.factor = factor
+
+            def __compose__(self) -> int:
+                return self.factor * 10
+
+        node = Multiplier[5]
+        agent = EventLoopAgent.build({node})
+
+        async with Scope(detail="test") as scope:
+            await agent.run(scope, mapped_scopes={})
+            result = scope[node].value
+
+        assert result == 50
 
 
 class TestNodeConstructorClassGetitem:
     def test_class_getitem_single_arg(self):
         class Parameterized(NodeConstructor):
-            @classmethod
-            def __construct__(cls, value: int) -> int:
+            value: int
+
+            def __init__(self, value: int):
+                ...
+
+            def __compose__(self) -> int:
                 ...
 
         node = Parameterized[5]
 
         assert node.__name__ == "Parameterized[5]"
-        assert node.__constructor__ is not None
         assert node.__type__ is node
 
     def test_class_getitem_multiple_args(self):
         class MultiParam(NodeConstructor):
-            @classmethod
-            def __construct__(cls, a: int, b: str) -> str:
+            a: int
+            b: str
+
+            def __init__(self, a: int, b: str):
+                ...
+
+            def __compose__(self) -> str:
                 ...
 
         node = MultiParam[10, "hello"]
 
         assert node.__name__ == "MultiParam[10, hello]"
-        assert node.__constructor__ is not None
+        assert node.__initialize__ is not None
 
     @pytest.mark.asyncio
     async def test_class_getitem_execution(self):
         class DoubleValue(NodeConstructor):
-            @classmethod
-            def __construct__(cls, x: int) -> int:
-                return x * 2
+            def __init__(self, x: int):
+                self.x = x
+
+            def __compose__(self) -> int:
+                return self.x * 2
 
         node = DoubleValue[21]
-        constructor = node.__constructor__
-        agent = EventLoopAgent.build({constructor})
+        agent = EventLoopAgent.build({node})
 
         async with Scope(detail="test") as scope:
             await agent.run(scope, mapped_scopes={})
-            result = scope[constructor].value
+            result = scope[node].value
 
         assert result == 42
-
-    def test_class_getitem_sets_dependencies_and_injections(self):
-        class WithArgs(NodeConstructor):
-            @classmethod
-            def __construct__(cls, x: int) -> int:
-                ...
-
-        node = WithArgs[5]
-
-        assert node.__constructor__ in node.__dependencies__
-        assert node.__constructor__ in node.__injections__
-
-    def test_class_getitem_creates_new_constructor(self):
-        class Parent(NodeConstructor):
-            @classmethod
-            def __construct__(cls) -> int:
-                ...
-
-        parent_constructor = Parent.__constructor__
-        node = Parent[5]
-        node_constructor = node.__constructor__
-
-        assert node_constructor is not parent_constructor
-        assert node_constructor in node.__dependencies__
-        assert "Parent[5]" in node_constructor.__name__
-
-
-class TestConstructorClass:
-    def test_constructor_has_self_type(self):
-        assert _Constructor.__type__ == typing.Self
-
-    def test_constructor_compose_calls_construct(self):
-        class TestNode(NodeConstructor):
-            @classmethod
-            def __construct__(cls) -> str:
-                return "constructed"
-
-        constructor = TestNode.__constructor__
-        assert constructor is not None
-
-        result = constructor.__compose__()
-        assert result == "constructed"
 
 
 class TestNodeConstructorIntegration:
     @pytest.mark.asyncio
     async def test_parameterized_constructor_full_flow(self):
         class Greeter(NodeConstructor):
-            @classmethod
-            def __construct__(cls, name: str) -> str:
-                return f"Hello, {name}!"
+            def __init__(self, name: str):
+                self.name = name
+
+            def __compose__(self) -> str:
+                return f"Hello, {self.name}!"
 
         node = Greeter["World"]
-        constructor = node.__constructor__
-        agent = EventLoopAgent.build({constructor})
+        agent = EventLoopAgent.build({node})
 
         async with Scope(detail="test") as scope:
             await agent.run(scope, mapped_scopes={})
-            result = scope[constructor].value
+            result = scope[node].value
 
         assert result == "Hello, World!"
 
     @pytest.mark.asyncio
     async def test_parameterized_with_multiple_args(self):
         class Calculator(NodeConstructor):
-            @classmethod
-            def __construct__(cls, a: int, b: int, op: str) -> int:
-                return a + b if op == "+" else a - b
+            def __init__(self, a: int, b: int, op: str):
+                self.a = a
+                self.b = b
+                self.op = op
+
+            def __compose__(self) -> int:
+                return self.a + self.b if self.op == "+" else self.a - self.b
 
         node = Calculator[10, 5, "+"]
-        constructor = node.__constructor__
-        agent = EventLoopAgent.build({constructor})
+        agent = EventLoopAgent.build({node})
 
         async with Scope(detail="test") as scope:
             await agent.run(scope, mapped_scopes={})
-            result = scope[constructor].value
+            result = scope[node].value
 
         assert result == 15

@@ -12,6 +12,7 @@ from nodnod.utils.misc import reverse_dict
 from nodnod.utils.resolve_signature import resolve_signature
 
 if typing.TYPE_CHECKING:
+    from nodnod.interface.composable import Composable
     from nodnod.value import Value
 
 type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, None]
@@ -54,6 +55,25 @@ def initialize_forward_refs(
             raise LookupError(f"Dependency `{type_name}` not found")
 
 
+class Annotate:
+    annotation: typing.Any
+    composable: "Composable"
+
+    def __init__(self, annotation: typing.Any, composable: typing.Any) -> None:
+        from nodnod.interface.composable import Composable
+
+        if not is_type(composable, Composable):
+            raise TypeError(f"Second argument of `Annotate` must be a `Composable`, got `{composable!r}`.")
+
+        self.annotation = annotation
+        self.composable = composable
+
+    def __class_getitem__(cls, items: tuple[typing.Any, ...], /) -> typing.Self:
+        if not isinstance(items, tuple) or len(items) != 2:
+            raise TypeError(f"Expected 2 items (annotation and composable like), got `{items!r}`.")
+        return cls(*items)
+
+
 class Node[T = typing.Any, Root = typing.Any]:
     __type__: typing.Any = None  # type: ignore
     __dependencies__: set[type["Node"]] = None  # type: ignore
@@ -61,6 +81,7 @@ class Node[T = typing.Any, Root = typing.Any]:
 
     __initialize__: typing.Callable[[set["Value"]], ComposeResponse[T]] = None  # type: ignore
     __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
+    __compose_names_by_type__: dict[typing.Any, str] = None  # type: ignore
 
     def __init_subclass__(  # noqa: PLR0915
         cls,
@@ -110,17 +131,20 @@ class Node[T = typing.Any, Root = typing.Any]:
                 if isinstance(dep_type, typing.TypeAliasType):
                     dep_type = all_args[dep_name] = dep_type.__value__
 
+                if isinstance(dep_type, Annotate):
+                    dep_type = all_args[dep_name] = dep_type.composable
+
                 if is_type(dep_type, Node):
                     dependency_nodes.add(dep_type)
                 elif is_type(dep_type, Composable):
-                    all_args[dep_name] = typing.get_origin(dep_type) or dep_type
-                    dependency_nodes.add(create_node_from_composable(typing.cast("type[Composable]", all_args[dep_name])))
+                    all_args[dep_name] = dep_type = typing.get_origin(dep_type) or dep_type
+                    dependency_nodes.add(create_node_from_composable(dep_type))  # type: ignore
                 elif is_union(dep_type):
-                    dependency_nodes.add(create_union_node(dep_type))
+                    dependency_nodes.add(create_union_node(dep_type))  # type: ignore
                 elif is_option(dep_type):
-                    dependency_nodes.add(create_option_node(dep_type))
+                    dependency_nodes.add(create_option_node(dep_type))  # type: ignore
                 elif is_result(dep_type):
-                    dependency_nodes.add(create_result_node(dep_type))
+                    dependency_nodes.add(create_result_node(dep_type))  # type: ignore
                 elif is_type(dep_type, type) or is_type(dep_type, tuple):
                     args = typing.get_args(dep_type)
                     if not args:
@@ -128,7 +152,7 @@ class Node[T = typing.Any, Root = typing.Any]:
 
                     if is_type(dep_type, type):
                         if is_type(type(args[0]), typing.TypeVar):
-                            type_arg_node = create_type_arg_node(cls, args[0], dep_type)
+                            type_arg_node = create_type_arg_node(cls, args[0], dep_type)  # type: ignore
                         else:
                             raise NotImplementedError("Only `type` with type var is supported.")
 
@@ -138,11 +162,11 @@ class Node[T = typing.Any, Root = typing.Any]:
                             and (unpack_args := typing.get_args(args[0]))
                             and is_type(type(unpack_args[0]), typing.TypeVarTuple)
                         ):
-                            type_arg_node = create_type_arg_node(cls, unpack_args[0], dep_type)
+                            type_arg_node = create_type_arg_node(cls, unpack_args[0], dep_type)  # type: ignore
                         else:
                             raise NotImplementedError("Only `typing.Unpack` with type var tuple is supported.")
 
-                    dependency_nodes.add(type_arg_node)
+                    dependency_nodes.add(type_arg_node)  # type: ignore
                 else:
                     is_processed_by_hook = False
                     for hook in injection_hooks:
@@ -163,7 +187,10 @@ class Node[T = typing.Any, Root = typing.Any]:
                                 "it looks like a `ForwardRef` that could not be resolved.",
                             )
 
-                        injected_types.add(dep_type)
+                        injected_types.add(dep_type)  # type: ignore
+
+            if cls.__compose_names_by_type__ is None:
+                cls.__compose_names_by_type__ = reverse_dict(all_args)
 
             if cls.__dependencies__ is None:
                 cls.__dependencies__ = dependency_nodes
@@ -173,16 +200,14 @@ class Node[T = typing.Any, Root = typing.Any]:
 
             if cls.__initialize__ is None:
                 # If not set, prepare the dependencies distribution
-                kwargs_names_by_type = reverse_dict(all_args)
-
                 cls.__initialize__ = (
                     kungfu.F[set["Value"]]()
                     .then(
                         lambda values: (
                             {
-                                kwargs_names_by_type[value.cls]: value.unbox()
+                                cls.__compose_names_by_type__[value.cls]: value.unbox()
                                 for value in values
-                                if value.cls in kwargs_names_by_type
+                                if value.cls in cls.__compose_names_by_type__
                             }
                         ),
                     ).then(
@@ -193,7 +218,7 @@ class Node[T = typing.Any, Root = typing.Any]:
             if cls.__type__ is None:
                 cls.__type__ = cls
 
-            setattr(cls, "__traverse__", build_queue(cls, []))
+            setattr(cls, "__traverse__", build_queue(cls, []))  # type: ignore
 
             INITIALIZED_FORWARD_REFS[cls.__name__] = cls
 
@@ -205,4 +230,4 @@ class Node[T = typing.Any, Root = typing.Any]:
         return f"<node `{type(self).__name__}`>"
 
 
-__all__ = ("Injection", "Node", "Queue")
+__all__ = ("Annotate", "Injection", "Node", "Queue")

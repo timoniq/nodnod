@@ -2,12 +2,13 @@ from .agent import Agent, EventLoopAgent
 from .compose import compose_node
 from .error import NodeError
 from .interface import *
-from .node import Injection, Node
+from .node import Annotate, Injection, Node
 from .scope import Scope
 from .value import Value
 
 __all__ = (
     "Agent",
+    "Annotate",
     "ConcurrentEither",
     "DataNode",
     "EventLoopAgent",
