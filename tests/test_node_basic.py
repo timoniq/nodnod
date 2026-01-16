@@ -4,7 +4,7 @@ import dataclasses
 import kungfu
 import pytest
 
-from nodnod import Annotate, DataNode, EventLoopAgent, Node, NodeError, Scope, scalar_node
+from nodnod import Scalar, DataNode, EventLoopAgent, Node, NodeError, Scope, scalar_node
 from nodnod.node import INITIALIZED_FORWARD_REFS
 from nodnod.interface.scalar import scalar_node
 
@@ -140,7 +140,7 @@ class TestEventLoopAgent:
         @scalar_node
         class NodeB:
             @classmethod
-            def __compose__(cls, a: Annotate[int, NodeA]) -> int:
+            def __compose__(cls, a: Scalar[int, NodeA]) -> int:
                 return a * 3
 
         agent = EventLoopAgent.build({NodeB})

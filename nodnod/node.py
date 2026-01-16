@@ -55,7 +55,7 @@ def initialize_forward_refs(
             raise LookupError(f"Dependency `{type_name}` not found")
 
 
-class Annotate:
+class Scalar:
     annotation: typing.Any
     composable: "Composable"
 
@@ -63,7 +63,7 @@ class Annotate:
         from nodnod.interface.composable import Composable
 
         if not is_type(composable, Composable):
-            raise TypeError(f"Second argument of `Annotate` must be a `Composable`, got `{composable!r}`.")
+            raise TypeError(f"Second argument of `Scalar` must be a `Composable`, got `{composable!r}`.")
 
         self.annotation = annotation
         self.composable = composable
@@ -131,7 +131,7 @@ class Node[T = typing.Any, Root = typing.Any]:
                 if isinstance(dep_type, typing.TypeAliasType):
                     dep_type = all_args[dep_name] = dep_type.__value__
 
-                if isinstance(dep_type, Annotate):
+                if isinstance(dep_type, Scalar):
                     dep_type = all_args[dep_name] = dep_type.composable
 
                 if is_type(dep_type, Node):
@@ -230,4 +230,4 @@ class Node[T = typing.Any, Root = typing.Any]:
         return f"<node `{type(self).__name__}`>"
 
 
-__all__ = ("Annotate", "Injection", "Node", "Queue")
+__all__ = ("Scalar", "Injection", "Node", "Queue")

@@ -5,12 +5,12 @@ import typing
 import kungfu
 
 from nodnod import (
-    Annotate,
     DataNode,
     EventLoopAgent,
     Node,
     NodeConstructor,
     NodeError,
+    Scalar,
     Scope,
     SequentialEither,
     Value,
@@ -146,7 +146,7 @@ class MultiplyBy(NodeConstructor):
 @scalar_node
 class Sum:
     @classmethod
-    def __compose__(cls, a: Annotate[int, MultiplyBy], b: Annotate[int, MultiplyBy[10]]) -> int:
+    def __compose__(cls, a: Scalar[int, MultiplyBy], b: Scalar[int, MultiplyBy[10]]) -> int:
         return a + b
 
 

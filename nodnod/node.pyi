@@ -1,5 +1,5 @@
 import typing
-from typing import Annotated as Annotate
+from typing import Annotated as Scalar
 
 import kungfu
 
@@ -24,4 +24,4 @@ class Node[T = typing.Any, Root = typing.Any]:
 
     def __init_subclass__(cls, abstract: bool = False, injection_hooks: tuple[InjectionHook, ...] = ()) -> None: ...
 
-__all__ = ("Annotate", "Injection", "Node", "Queue")
+__all__ = ("Scalar", "Injection", "Node", "Queue")
