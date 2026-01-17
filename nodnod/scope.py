@@ -1,14 +1,16 @@
-from nodnod.node import Node
-from nodnod.value import Value
-from nodnod.utils.aio import awaitable_noop
-from nodnod.error import NodeError
-import typing
-import kungfu
 import asyncio
 import secrets
+import typing
 from collections import OrderedDict
 
-type AnyType = type[typing.Any]
+import kungfu
+
+from nodnod.error import NodeError
+from nodnod.node import Node
+from nodnod.utils.aio import awaitable_noop
+from nodnod.value import Value
+
+type AnyType = typing.Any
 
 
 class Scope(OrderedDict[AnyType, Value]):
@@ -29,7 +31,7 @@ class Scope(OrderedDict[AnyType, Value]):
             return self.prev.retrieve(key)
         return kungfu.Some(self[key])
 
-    def push(self, value: Value):
+    def push(self, value: Value) -> None:
         self[value.cls] = value
 
     def close(self) -> typing.Awaitable[typing.Any]:
@@ -50,7 +52,7 @@ class Scope(OrderedDict[AnyType, Value]):
 
         return asyncio.gather(*coros)
 
-    def has_parent(self, parent: "Scope"):
+    def has_parent(self, parent: "Scope") -> bool:
         candidate = self.prev
         while candidate is not None:
             if candidate is parent:
@@ -61,7 +63,7 @@ class Scope(OrderedDict[AnyType, Value]):
     def create_child(self, detail: str | None = None) -> "Scope":
         return Scope(prev=self, detail=detail)
 
-    def __enter__(self):
+    def __enter__(self) -> typing.Self:
         return self
 
     def __exit__(self, *_: typing.Any) -> None:

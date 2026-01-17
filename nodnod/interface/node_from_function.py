@@ -5,11 +5,13 @@ from typing_extensions import ForwardRef
 
 from nodnod.builder.build_queue import build_queue
 from nodnod.error import NodeError
+from nodnod.interface.composable import Composable
 from nodnod.interface.is_node import is_node
-from nodnod.node import ComposeResponse, Injection, Node, initialize_forward_refs, is_type
+from nodnod.node import ComposeResponse, Node, initialize_forward_refs, is_injection
 from nodnod.utils.call import call_with_context
-from nodnod.utils.create_node import create_node
+from nodnod.utils.create_node import create_node, create_node_from_composable
 from nodnod.utils.injection import get_injection_type
+from nodnod.utils.is_type import is_type
 from nodnod.utils.misc import reverse_dict
 from nodnod.utils.resolve_signature import resolve_signature
 from nodnod.value import Value
@@ -24,7 +26,7 @@ def collect_externals_and_names_hook(
     dep_name: str,
     dep_type: typing.Any,
 ) -> kungfu.Pulse[str]:
-    if is_type(dep_type, Injection):
+    if is_injection(dep_type):
         return kungfu.Error("Injection is internal.")
 
     if not hasattr(node, "__externals__"):
@@ -113,7 +115,11 @@ def create_node_from_function(
 
     node.__injections__.add(Externals)
 
-    dependencies = {dep_name: dep for dep_name, dep in dependencies.items() if is_node(dep)} if dependencies else {}
+    dependencies = {
+        dep_name: dep if is_node(dep) else create_node_from_composable(dep)
+        for dep_name, dep in dependencies.items()
+        if is_type(dep, Composable)
+    } if dependencies else {}
     externals: set[str] = getattr(node, "__externals__", set())
     names: dict[typing.Any, str] = getattr(node, "__names__", _NameDict())
     reversed_names = reverse_dict(names)
@@ -133,7 +139,7 @@ def create_node_from_function(
             names[new_dependency.__type__] = dep_name
             continue
 
-        if is_type(dep_type, Injection):
+        if is_injection(dep_type):
             dep_type = get_injection_type(dep_type, owner=func)
 
         if isinstance(dep_type, ForwardRef):

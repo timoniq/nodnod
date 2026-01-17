@@ -19,7 +19,7 @@ type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, N
 type ComposeResponse[T] = T | "Node[T]" | typing.Awaitable[T] | Generator[T]
 type Queue = list[type[Node]]
 
-type Injection[T] = typing.Annotated[T, ...]
+type Injection[T] = typing.Annotated[T, "injection"]
 type InjectionHook = typing.Callable[["type[Node]", str, typing.Any], kungfu.Pulse[str]]
 
 FORWARD_REF_REQUESTS = collections.defaultdict[str, list["type[Node]"]](list)
@@ -55,6 +55,13 @@ def initialize_forward_refs(
             raise LookupError(f"Dependency `{type_name}` not found")
 
 
+def is_injection(obj: typing.Any, /) -> bool:
+    return (
+        is_type(obj, Injection)
+        or (isinstance(obj, typing._AnnotatedAlias) and obj.__metadata__ == ("injection",))  # type: ignore
+    )
+
+
 class Scalar:
     annotation: typing.Any
     composable: "Composable"
@@ -78,6 +85,7 @@ class Node[T = typing.Any, Root = typing.Any]:
     __type__: typing.Any = None  # type: ignore
     __dependencies__: set[type["Node"]] = None  # type: ignore
     __injections__: set[typing.Any] = None  # type: ignore
+    __map__: typing.Mapping[typing.Any, type["Node"]] = None  # type: ignore
 
     __initialize__: typing.Callable[[set["Value"]], ComposeResponse[T]] = None  # type: ignore
     __compose__: typing.Callable[..., ComposeResponse[T]] = dummy_compose
@@ -127,12 +135,20 @@ class Node[T = typing.Any, Root = typing.Any]:
             dependency_nodes = set[type[Node]]()
             injected_types = set[type[typing.Any]]()
 
+            cls.__map__ = {  # type: ignore
+                dep_type: node if is_type(dep_type, Node) else create_node_from_composable(dep_type)
+                for dep_type, node in cls.__map__.items()
+                if is_type(dep_type, Composable)
+            } if cls.__map__ is not None else {}
+
             for dep_name, dep_type in all_args.copy().items():
                 if isinstance(dep_type, typing.TypeAliasType):
                     dep_type = all_args[dep_name] = dep_type.__value__
 
                 if isinstance(dep_type, Scalar):
                     dep_type = all_args[dep_name] = dep_type.composable
+
+                all_args[dep_name] = dep_type = cls.__map__.get(dep_type, dep_type)
 
                 if is_type(dep_type, Node):
                     dependency_nodes.add(dep_type)
@@ -175,7 +191,7 @@ class Node[T = typing.Any, Root = typing.Any]:
                             break
 
                     if not is_processed_by_hook:
-                        if is_type(dep_type, Injection):
+                        if is_injection(dep_type):
                             dep_type = get_injection_type(dep_type, owner=cls.__compose__)
 
                         # Unresolved ForwardRef
@@ -230,4 +246,4 @@ class Node[T = typing.Any, Root = typing.Any]:
         return f"<node `{type(self).__name__}`>"
 
 
-__all__ = ("Scalar", "Injection", "Node", "Queue")
+__all__ = ("Scalar", "Injection", "Node", "Queue", "dummy_compose", "is_injection", "initialize_forward_refs")

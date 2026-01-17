@@ -1,4 +1,5 @@
 import typing
+from contextlib import suppress
 
 from typing_extensions import Format, ForwardRef, evaluate_forward_ref
 
@@ -11,19 +12,17 @@ def get_injection_type(
 ) -> typing.Any:
     args = typing.get_args(injection)
 
-    if len(args) != 1:
-        raise ValueError("Injection must have exactly one type argument.")
+    if not args:
+        raise ValueError("Injection must have one type argument.")
 
     arg = args[0]
 
     if isinstance(arg, str):
-        arg = ForwardRef(arg, is_argument=True, is_class=isinstance(owner, type) if owner is not None else False)
+        arg = ForwardRef(arg, is_class=isinstance(owner, type) if owner is not None else False)
 
     if isinstance(arg, ForwardRef):
-        try:
+        with suppress(NameError):
             arg = evaluate_forward_ref(arg, owner=owner, format=Format.VALUE)
-        except NameError:
-            return arg
 
     return arg
 
