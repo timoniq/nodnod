@@ -3,7 +3,6 @@ from typing import Annotated as Scalar
 
 import kungfu
 
-from nodnod.interface.composable import Composable
 from nodnod.value import Value
 
 type AnyType = typing.Any
@@ -12,6 +11,7 @@ type Generator[T] = typing.Generator[T, None, None] | typing.AsyncGenerator[T, N
 type ComposeResponse[T = typing.Any] = T | Node[T] | typing.Awaitable[T] | Generator[T]
 type InjectionHook = typing.Callable[[type[Node], str, typing.Any], kungfu.Pulse[str]]
 type Queue = list[type[Node]]
+type Composable = typing.Any
 
 def dummy_compose(cls: type[typing.Any]) -> typing.NoReturn: ...
 def initialize_forward_refs(forward_refs: dict[str, typing.Any], *, is_from_function: bool = False) -> None: ...

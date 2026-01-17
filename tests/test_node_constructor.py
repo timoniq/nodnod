@@ -33,6 +33,9 @@ class TestInitializeNodeConstructor:
 class TestNodeConstructorBasic:
     def test_node_constructor_sets_initialize(self):
         class MyConstructor(NodeConstructor):
+            def __init__(self):
+                self.__map__ = {}
+
             def __compose__(self) -> int:
                 ...
 
