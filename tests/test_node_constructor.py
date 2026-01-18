@@ -2,7 +2,7 @@ import typing
 
 import pytest
 
-from nodnod import Scope
+from nodnod import Scope, Node
 from nodnod.interface.node_constructor import NodeConstructor, initialize_node_constructor
 from nodnod.agent.event_loop.agent import EventLoopAgent
 from nodnod.value import Value
@@ -33,19 +33,16 @@ class TestInitializeNodeConstructor:
 class TestNodeConstructorBasic:
     def test_node_constructor_sets_initialize(self):
         class MyConstructor(NodeConstructor):
-            def __init__(self):
-                self.__map__ = {}
-
             def __compose__(self) -> int:
                 ...
 
         assert MyConstructor.__initialize__ is not None
 
-    def test_node_constructor_abstract_inherits_from_node(self):
-        class AbstractConstructor(NodeConstructor, abstract=True):
+    def test_node_constructor_initialize_false_inherits_from_node(self):
+        class Constructor(NodeConstructor, initialize=False):
             pass
 
-        assert issubclass(AbstractConstructor, NodeConstructor)
+        assert issubclass(Constructor, NodeConstructor)
 
 
 class TestNodeConstructorExecution:
@@ -154,8 +151,12 @@ class TestNodeConstructorIntegration:
 
     @pytest.mark.asyncio
     async def test_parameterized_with_multiple_args(self):
+        class MyNode(Node, abstract=True):
+            ...
+
         class Calculator(NodeConstructor):
             def __init__(self, a: int, b: int, op: str):
+                self.__map__ = {object: MyNode}
                 self.a = a
                 self.b = b
                 self.op = op

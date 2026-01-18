@@ -136,19 +136,19 @@ class Node[T = typing.Any, Root = typing.Any]:
             injected_types = set[type[typing.Any]]()
 
             cls.__map__ = {  # type: ignore
-                dep_type: node if is_type(dep_type, Node) else create_node_from_composable(dep_type)
+                dep_type: node if is_type(node, Node) else create_node_from_composable(node)
                 for dep_type, node in cls.__map__.items()
-                if is_type(dep_type, Composable)
+                if is_type(node, Composable)
             } if cls.__map__ is not None else {}
 
             for dep_name, dep_type in all_args.copy().items():
+                all_args[dep_name] = dep_type = cls.__map__.get(dep_type, dep_type)
+
                 if isinstance(dep_type, typing.TypeAliasType):
                     dep_type = all_args[dep_name] = dep_type.__value__
 
                 if isinstance(dep_type, Scalar):
                     dep_type = all_args[dep_name] = dep_type.composable
-
-                all_args[dep_name] = dep_type = cls.__map__.get(dep_type, dep_type)
 
                 if is_type(dep_type, Node):
                     dependency_nodes.add(dep_type)

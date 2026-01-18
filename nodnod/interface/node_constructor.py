@@ -16,21 +16,16 @@ def initialize_node_constructor(
 class NodeConstructor(Node, abstract=True):
     def __init_subclass__(
         cls,
-        abstract: bool = False,
         injection_hooks: tuple[InjectionHook, ...] = (),
+        initialize: bool = True,
         map: typing.Mapping[typing.Any, typing.Any] | None = None,
     ) -> None:
-        if map is not None:
+        if map:
             cls.__map__ = map
-        elif (
-            "__map__" in getattr(cls, "__static_attributes__", ())
-            or ("__map__" in cls.__dict__ and not isinstance(cls.__map__, typing.Mapping))
-        ):
-            cls.__map__ = cls().__map__
 
         super().__init_subclass__(injection_hooks=injection_hooks)
 
-        if not abstract:
+        if initialize:
             cls.__initialize__ = lambda values: initialize_node_constructor(
                 lambda context: call_with_context(cls().__compose__, context),
                 cls.__compose_names_by_type__,
@@ -51,15 +46,15 @@ class NodeConstructor(Node, abstract=True):
                 __map__=None,
                 __compose_names_by_type__=None,
             ),
-            abstract=True,
+            initialize=False,
             map=cls(*items).__map__,
         )
         setattr(
             node,
             "__initialize__",
             lambda values: initialize_node_constructor(
-                lambda context: call_with_context(cls(*items).__compose__, context),
-                cls.__compose_names_by_type__,
+                lambda context: call_with_context(node(*items).__compose__, context),
+                node.__compose_names_by_type__,
                 values,
             ),
         )
