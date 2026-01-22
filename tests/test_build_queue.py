@@ -46,7 +46,6 @@ class TestBuildQueue:
             __dependencies__ = set()
             __injections__ = set()
 
-        # Should not raise for valid node
         validate_no_circular_dependency(ValidNode, [])
 
     def test_validate_circular_dependency_detected(self):
@@ -60,7 +59,6 @@ class TestBuildQueue:
             __dependencies__ = {NodeA}
             __injections__ = set()
 
-        # Manually create circular dependency by modifying NodeA's dependencies
         NodeA.__dependencies__.add(NodeB)
 
         with pytest.raises(NodeBuildError):

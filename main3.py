@@ -1,10 +1,21 @@
-from nodnod import scalar_node, NodeError, EventLoopAgent, Scope
-from nodnod.interface.node_from_function import create_agent_from_node, create_node_from_function, inject_externals, Externals
-from nodnod.interface.compose_one import compose_one
+import asyncio
 import dataclasses
-import kungfu
 import datetime
 import typing
+
+import kungfu
+
+from nodnod import (
+    EventLoopAgent,
+    Externals,
+    NodeError,
+    Scope,
+    create_agent_from_node,
+    create_node_from_function,
+    inject_externals,
+    scalar_node,
+)
+from nodnod.interface.compose_one import compose_one
 
 
 @dataclasses.dataclass
@@ -78,7 +89,6 @@ async def main():
         inject_externals(scope, {"boba": "ahah", "lol": "omg"})
         await agent.run(scope, {})
 
-
     print(
         await compose_one(
             SinceActive,
@@ -94,5 +104,4 @@ async def main():
     )
 
 
-import asyncio
 asyncio.run(main())

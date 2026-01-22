@@ -1,32 +1,36 @@
-import typing
 import asyncio
-from nodnod.compose import compose_node
-from nodnod.node import Node
-from nodnod.scope import Scope
+import typing
+
 import kungfu
-from nodnod.value import Value
+
+from nodnod.compose import compose_node
 from nodnod.error import NodeError
-from nodnod.interface.result_node import ResultNode
+from nodnod.scope import Scope
+from nodnod.value import Value
+
+if typing.TYPE_CHECKING:
+    from nodnod.interface.result_node import ResultNode
+    from nodnod.node import Node
 
 type DependencyFuture[T] = asyncio.Future[kungfu.Result[Value[T], NodeError]]
-type Pusher = typing.Callable[[dict[type[Node], asyncio.Future], type[Node]], None]
+type Pusher = typing.Callable[[dict[type["Node"], asyncio.Future], type["Node"]], None]
 
 
 async def compose_coroutine(
-    node: type[Node],
+    node: type["Node"],
     node_scope: Scope,
     local_scope: Scope,
     dependencies: list[DependencyFuture],
 ) -> kungfu.Result[Value[typing.Any], NodeError]:
     for result in await asyncio.gather(*dependencies):
         if kungfu.is_err(result):
-            return kungfu.Error(NodeError(f"could not resolve dependencies of {node.__name__}", from_error=result.error))
+            return kungfu.Error(NodeError(f"could not resolve dependencies of `{node.__name__}`", from_error=result.error))
 
     return await compose_node(node, node_scope, local_scope)
 
 
 async def result_node_compose_coroutine(
-    node: type[ResultNode],
+    node: type["ResultNode[typing.Any, typing.Any]"],
     node_scope: Scope,
     from_node: DependencyFuture,
 ) -> kungfu.Result[Value[typing.Any], NodeError]:
@@ -48,13 +52,13 @@ async def result_node_compose_coroutine(
 
 
 async def dependency_sequential_either_coroutine(
-    first_dependency: tuple[type[Node], DependencyFuture],
-    other_dependencies: tuple[type[Node], ...],
-    futures: dict[type[Node], asyncio.Future],
+    first_dependency: tuple[type["Node"], DependencyFuture],
+    other_dependencies: tuple[type["Node"], ...],
+    futures: dict[type["Node"], asyncio.Future],
     pusher: Pusher,
-    mapped_scopes: dict[type[Node], Scope],
+    mapped_scopes: dict[type["Node"], Scope],
     local_scope: Scope,
-) -> kungfu.Result[Value[typing.Any], NodeError]:
+) -> kungfu.Result[Value, NodeError]:
     """How sequential either is getting resolved:
 
     SequentialEither[A, B, C]
@@ -95,9 +99,9 @@ async def dependency_sequential_either_coroutine(
     return kungfu.Error(NodeError("no option found for either", from_many=errors))
 
 
-async def dependency_concurrent_either_corountine(
+async def dependency_concurrent_either_coroutine(
     dependencies: list[DependencyFuture],
-) -> kungfu.Result[Value[typing.Any], NodeError]:
+) -> kungfu.Result[Value, NodeError]:
     errors: list[NodeError] = []
 
     candidate_dependencies = set(dependencies)
@@ -118,7 +122,7 @@ async def dependency_concurrent_either_corountine(
 
 __all__ = (
     "compose_coroutine",
-    "dependency_concurrent_either_corountine",
+    "dependency_concurrent_either_coroutine",
     "dependency_sequential_either_coroutine",
     "result_node_compose_coroutine",
 )

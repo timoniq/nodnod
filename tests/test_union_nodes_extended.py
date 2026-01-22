@@ -1,3 +1,4 @@
+import sys
 import typing
 
 import kungfu
@@ -16,7 +17,6 @@ class TestUnionNodesExtended:
         assert none_node.__dependencies__ == set()
 
     def test_create_union_node_empty_args(self):
-        # Create a union with no args to test the error case
         empty_union = typing.Union
 
         with pytest.raises(NodeBuildError, match="Union must have at least one type argument"):
@@ -29,27 +29,47 @@ class TestUnionNodesExtended:
 
         TestNode.__type__ = TestNode
 
-        # Union with None (Optional)
         optional_union = typing.Union[TestNode, type(None)]
         union_node = create_union_node(optional_union)
 
         assert issubclass(union_node, Node)
-        # Should handle the None case
         assert hasattr(union_node, "__either__")
 
     def test_create_union_node_with_option_type(self):
-        class TestNode(Node, abstract=True):
-            __dependencies__ = set()
-            __injections__ = set()
+        class TestNode(Node):
+            @classmethod
+            def __compose__(cls) -> None:
+                ...
 
-        TestNode.__type__ = TestNode
-        # Union with Option type
-        option_union = typing.Union[kungfu.Option[TestNode], int]
-        union_node = create_union_node(option_union)
+        class IntNode(Node):
+            @classmethod
+            def __compose__(cls) -> int:
+                ...
+
+        union_node = create_union_node(typing.Union[IntNode, kungfu.Option[TestNode]])
 
         assert issubclass(union_node, Node)
         assert hasattr(union_node, "__either__")
 
-    def test_create_union_node_with_injected_types(self):
-        # TODO
-        pass
+    def test_create_union_node_with_result_type(self):
+        class TestNode(Node):
+            @classmethod
+            def __compose__(cls) -> int:
+                ...
+
+        union_node = create_union_node(typing.Union[TestNode, kungfu.Result[TestNode, ValueError]])
+
+        assert issubclass(union_node, Node)
+        assert hasattr(union_node, "__either__")
+
+    def test_create_union_node_with_composable_and_injected_types(self):
+        class ComposableClass:
+            @classmethod
+            def __compose__(cls) -> int:
+                ...
+
+        union_node = create_union_node(typing.Union[ComposableClass, int])
+
+        assert issubclass(union_node, Node)
+        assert hasattr(union_node, "__either__")
+        assert union_node.__injections__ == {int}

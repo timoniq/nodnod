@@ -1,5 +1,5 @@
-import typing
 import inspect
+import typing
 
 
 async def maybe_awaitable[T](value: T | typing.Awaitable[T], /) -> T:
@@ -8,7 +8,7 @@ async def maybe_awaitable[T](value: T | typing.Awaitable[T], /) -> T:
     return value
 
 
-class awaitable_noop:
+class awaitable_noop:  # noqa: N801
     def __await__(self) -> typing.Generator[None, None, typing.Any]:
         return iter(())  # type: ignore
 

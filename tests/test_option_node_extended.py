@@ -1,28 +1,21 @@
 import kungfu
 import pytest
 
-from nodnod import Node, scalar_node
+from nodnod import Node
 from nodnod.error import NodeBuildError
 from nodnod.interface.option_node import create_option_node
 
 
 class TestOptionNodeExtended:
     def test_create_option_node_no_args(self):
-        # Create an Option with no type args to test error case
         with pytest.raises(NodeBuildError, match="Option must have exactly one type argument"):
-            # This would be an invalid Option type, but we simulate it
-            empty_option = kungfu.Option  # Raw Option without type argument
+            empty_option = kungfu.Option
             create_option_node(empty_option)
 
     def test_create_option_node_with_non_node_type(self):
-        # Option with non-node type (should be injected)
-        option_type = kungfu.Option[int]
-        option_node = create_option_node(option_type)
+        with pytest.raises(NodeBuildError, match="`int` does not have a `__compose__` method"):
+            create_option_node(kungfu.Option[int])
 
-        some_node = option_node.__either__[0]
-        assert issubclass(option_node, Node)
-        assert some_node.__injections__ == {int}
-        assert some_node.__dependencies__ == set()
 
     def test_create_option_node_with_node_type(self):
         class TestNode(Node, abstract=True):

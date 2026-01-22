@@ -1,17 +1,19 @@
-from nodnod.node import Node, ComposeResponse
-from nodnod.scope import Scope
-from nodnod.value import Value
-from nodnod.error import NodeError
-from nodnod.utils.generator import generator_send, generator_asend
 import inspect
-import typing
 import types
+import typing
+
 import kungfu
+
+from nodnod.error import NodeError
+from nodnod.node import ComposeResponse, Node
+from nodnod.scope import Scope
+from nodnod.utils.generator import generator_asend, generator_send
+from nodnod.value import Value
 
 
 async def initialize_node[T](cls: type[Node], value: ComposeResponse[T]) -> Value[T]:
     if inspect.isawaitable(value):
-        value = typing.cast(T, await value)
+        value = typing.cast("T", await value)
 
     if isinstance(value, types.GeneratorType):
         generator = typing.cast("typing.Generator[T, None, None]", value)

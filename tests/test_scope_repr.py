@@ -6,7 +6,6 @@ from nodnod import Scope, Value, Node
 class TestScopeRepr:
     def test_empty_scope_repr(self):
         scope = Scope(detail="empty")
-        # Clear the self-reference to make it truly empty for repr
         scope.clear()
 
         repr_str = repr(scope)
@@ -47,7 +46,6 @@ class TestScopeRepr:
         obj1 = AsyncValue1()
         obj2 = AsyncValue2()
 
-        # Use custom Value objects with async generators to trigger the gather path
         async def async_gen1():
             yield obj1
             await obj1.close()

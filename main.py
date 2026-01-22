@@ -4,12 +4,21 @@ import typing
 
 import kungfu
 
-from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, Value, case, polymorphic, scalar_node
-from nodnod.interface.cache import cache
-from nodnod.interface.either import ConcurrentEither, SequentialEither
-from nodnod.interface.generic import generic_node
-from nodnod.interface.polymorphic import case, polymorphic
-from nodnod.interface.result_node import ResultNode
+from nodnod import (
+    DataNode,
+    EventLoopAgent,
+    Node,
+    NodeConstructor,
+    NodeError,
+    Scalar,
+    Scope,
+    SequentialEither,
+    Value,
+    case,
+    generic_node,
+    polymorphic,
+    scalar_node,
+)
 from nodnod.utils.prepare_values import prepare_values
 
 
@@ -63,16 +72,6 @@ class B(Node[int]):
     @classmethod
     async def __compose__(cls):
         yield 5
-
-
-@cache(seconds=10)
-@scalar_node
-class D(Node[int]):
-    @classmethod
-    async def __compose__(cls):
-        print("composing d")  # every 10 seconds
-        yield 10
-        print("closing d")
 
 
 class AorB(SequentialEither):
@@ -129,8 +128,30 @@ class LOL:
         return x.upper() * mi + "d"
 
 
+@scalar_node
+class Jackpot:
+    @classmethod
+    def __compose__(cls) -> int:
+        return 777
+
+
+class MultiplyBy(NodeConstructor):
+    def __init__(self, multiplier: int = 5) -> None:
+        self.multiplier = multiplier
+
+    def __compose__(self, jackpot: Jackpot) -> int:
+        return 123 * self.multiplier + jackpot
+
+
+@scalar_node
+class Sum:
+    @classmethod
+    def __compose__(cls, a: Scalar[int, MultiplyBy], b: Scalar[int, MultiplyBy[10]]) -> int:
+        return a + b
+
+
 async def main():
-    agent = EventLoopAgent.build({TypeArgs[int, str], LOL, C, D, D, Lolik[str, float, str], Lolik[int, str, int]})  # type: ignore
+    agent = EventLoopAgent.build({TypeArgs[int, str], LOL, C, Lolik[str, float, str], Lolik[int, str, int], Sum})  # type: ignore
 
     global_scope = Scope(detail="global")
     global_scope.push(Value(Interface, MyInterface()))

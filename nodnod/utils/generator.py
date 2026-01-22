@@ -1,5 +1,6 @@
-import typing
 import contextlib
+import typing
+
 import kungfu
 
 

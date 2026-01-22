@@ -4,7 +4,8 @@ import dataclasses
 import kungfu
 import pytest
 
-from nodnod import DataNode, EventLoopAgent, Node, NodeError, Scope, scalar_node
+from nodnod import Scalar, DataNode, EventLoopAgent, Node, NodeError, Scope, scalar_node
+from nodnod.node import INITIALIZED_FORWARD_REFS
 from nodnod.interface.scalar import scalar_node
 
 
@@ -22,14 +23,14 @@ class TestBasicNode:
         class NodeB(Node):
             @classmethod
             def __compose__(cls, a: NodeA) -> None:
-                pass  # pragma: no cover
+                ...
 
         assert NodeA in NodeB.__dependencies__
 
     def test_scalar_node_decorator_on_function(self):
         @scalar_node
         def my_function() -> None:
-            pass  # pragma: no cover
+            ...
 
         assert issubclass(my_function, Node)
 
@@ -43,10 +44,23 @@ class TestDataNode:
 
             @classmethod
             def __compose__(cls) -> None:
-                pass  # pragma: no cover
+                ...
 
         assert issubclass(TestData, DataNode)
         assert issubclass(TestData, Node)
+
+
+class TestNodeErrorForwardRefDependency:
+    def test_node_error_forward_ref_dependency(self):
+        class NodeA(Node):
+            @classmethod
+            def __compose__(cls, dep: "Dummy") -> None:  # type: ignore
+                ...
+
+        INITIALIZED_FORWARD_REFS["Dummy"] = "Dummy"
+
+        with pytest.raises(LookupError, match=r"^Unresolved dependency for `dep` of `NodeA`, it looks like a `ForwardRef` that could not be resolved\.$"):
+            NodeA.__init_subclass__()
 
 
 class TestScope:
@@ -118,8 +132,7 @@ class TestEventLoopAgent:
 
     @pytest.mark.asyncio
     async def test_agent_with_dependencies(self):
-        @scalar_node
-        class NodeA:
+        class NodeA(Node):
             @classmethod
             def __compose__(cls) -> int:
                 return 10
@@ -127,7 +140,7 @@ class TestEventLoopAgent:
         @scalar_node
         class NodeB:
             @classmethod
-            def __compose__(cls, a: NodeA) -> int:
+            def __compose__(cls, a: Scalar[int, NodeA]) -> int:
                 return a * 3
 
         agent = EventLoopAgent.build({NodeB})

@@ -87,5 +87,4 @@ class TestConcurrentEither:
             await agent.run(local_scope=scope, mapped_scopes={})
             result = scope.retrieve(TestEither)
             assert kungfu.is_some(result)
-            # Should get the fast result
             assert result.unwrap().value in (100, 200)

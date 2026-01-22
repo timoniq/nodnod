@@ -5,7 +5,7 @@ from nodnod.utils.resolve_signature import resolve_signature
 
 def test_signature_var_positional_type():
     def func_with_args(*args: int):
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_with_args)
     assert signature.var_positional_type == int
@@ -13,7 +13,7 @@ def test_signature_var_positional_type():
 
 def test_signature_var_positional_type_none():
     def func_without_args():
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_without_args)
     assert signature.var_positional_type is None
@@ -21,7 +21,7 @@ def test_signature_var_positional_type_none():
 
 def test_signature_var_keyword_type():
     def func_with_kwargs(**kwargs: str):
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_with_kwargs)
     assert signature.var_keyword_type == str
@@ -29,7 +29,7 @@ def test_signature_var_keyword_type():
 
 def test_signature_var_keyword_type_none():
     def func_without_kwargs():
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_without_kwargs)
     assert signature.var_keyword_type is None
@@ -37,7 +37,7 @@ def test_signature_var_keyword_type_none():
 
 def test_signature_get_all_types():
     def func_with_types(a: int, /, b: str = "default", *, c: bool = False):
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_with_types)
     all_types = signature.get_all_types()
@@ -52,7 +52,7 @@ def test_resolve_signature_with_staticmethod():
     class TestClass:
         @staticmethod
         def static_method(x: int) -> str:
-            return str(x)  # pragma: no cover
+            ...
 
     signature = resolve_signature(TestClass.__dict__["static_method"])
 
@@ -64,7 +64,7 @@ def test_resolve_signature_with_classmethod():
     class TestClass:
         @classmethod
         def class_method(cls, x: int) -> str:
-            return str(x)  # pragma: no cover
+            ...
 
     signature = resolve_signature(TestClass.__dict__["class_method"], ignore_bound_parameters=True)
 
@@ -75,7 +75,7 @@ def test_resolve_signature_with_classmethod():
 
 def test_resolve_signature_var_positional():
     def func_with_varargs(a: int, *args: str):
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_with_varargs)
 
@@ -86,7 +86,7 @@ def test_resolve_signature_var_positional():
 
 def test_resolve_signature_var_keyword():
     def func_with_varkwargs(a: int, **kwargs: float):
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_with_varkwargs)
 
@@ -97,19 +97,18 @@ def test_resolve_signature_var_keyword():
 
 def test_resolve_signature_string_annotation():
     def func_with_string_annotation(x: "int") -> str:
-        return str(x)  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_with_string_annotation)
 
     assert "x" in signature.kwargs
     annotation = signature.kwargs["x"]
-    assert isinstance(annotation, typing.ForwardRef)
-    assert annotation.__forward_arg__ == "int"
+    assert annotation is int
 
 
 def test_resolve_signature_positional_only():
     def func_with_posonly(a: int, /, b: str = "default"):
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_with_posonly)
 
@@ -122,7 +121,7 @@ def test_resolve_signature_positional_only():
 
 def test_signature_merge():
     def func_mixed(a: int, /, b: str = "default"):
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_mixed)
     merged = signature.merge()
@@ -135,7 +134,7 @@ def test_signature_merge():
 
 def test_resolve_signature_no_annotations():
     def func_no_annotations(x: typing.Any, y: typing.Any):
-        pass  # pragma: no cover
+        ...
 
     signature = resolve_signature(func_no_annotations)
 

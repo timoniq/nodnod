@@ -6,7 +6,7 @@ import pytest
 
 from nodnod.agent.event_loop.coroutine import (
     compose_coroutine,
-    dependency_concurrent_either_corountine,
+    dependency_concurrent_either_coroutine,
     dependency_sequential_either_coroutine,
     result_node_compose_coroutine,
 )
@@ -30,7 +30,7 @@ class ErrorNode(Node):
 
     @classmethod
     def __compose__(cls):
-        raise ValueError("Test error")  # pragma: no cover
+        ...
 
 
 class TestResultNode(ResultNode):
@@ -196,7 +196,7 @@ async def test_dependency_concurrent_either_coroutine_success():
     success_future = asyncio.Future()
     success_future.set_result(kungfu.Ok(Value(int, 42)))
 
-    result = await dependency_concurrent_either_corountine([success_future])
+    result = await dependency_concurrent_either_coroutine([success_future])
 
     assert kungfu.is_ok(result)
 
@@ -209,7 +209,7 @@ async def test_dependency_concurrent_either_coroutine_all_fail():
     fail_future2 = asyncio.Future()
     fail_future2.set_result(kungfu.Error(NodeError("failed 2")))
 
-    result = await dependency_concurrent_either_corountine([fail_future1, fail_future2])
+    result = await dependency_concurrent_either_coroutine([fail_future1, fail_future2])
 
     assert kungfu.is_err(result)
     assert "no option found for either" in str(result.error)
