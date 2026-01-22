@@ -1,0 +1,76 @@
+import typing
+
+import kungfu
+
+from nodnod.interface.either import Either
+from nodnod.node import ComposeResponse, Node
+from nodnod.utils.create_node import create_node
+
+CASE_MARK: typing.Final = "IS_CASE"
+
+
+def case_decorator[Cls, R, **P](case_method: typing.Callable[typing.Concatenate[Cls, P], R], /) -> typing.Callable[P, R]:
+    if isinstance(case_method, classmethod):
+        func = case_method.__func__
+    else:
+        func = case_method
+        case_method = classmethod(case_method)  # type: ignore
+
+    setattr(func, CASE_MARK, True)
+    return case_method  # type: ignore
+
+
+def collect_cases(node_class: type[typing.Any]) -> list[typing.Callable[..., ComposeResponse[typing.Any]]]:
+    cases = []
+
+    for base in node_class.mro():
+        for item in base.__dict__.values():
+            if isinstance(item, classmethod) and getattr(item.__func__, CASE_MARK, None) is True:
+                cases.append(item)
+
+    return cases
+
+
+class PolymorphicNode[T](Either, abstract=True):
+    __either__: tuple[type[T], ...]
+    is_concurrent = False
+    is_scalar = False
+
+    @classmethod
+    def __compose__(cls, node: kungfu.Sum) -> T:
+        if cls.is_scalar:
+            return node.v.value
+        return node.v
+
+
+class polymorphic[T]:  # noqa: N801
+    POLYMORPHIC_NODE_CLS = PolymorphicNode
+
+    def __new__(cls, node_class: type[typing.Any]) -> type[PolymorphicNode[T]]:
+        case_nodes: list[type[Node]] = []
+
+        for case in collect_cases(node_class):
+            node = create_node(
+                name=node_class.__name__ + ":" + case.__name__,
+                base_node=Node,
+                bases=(node_class,),
+                namespace=dict(__compose__=case, __module__=node_class.__module__),
+            )
+            case_nodes.append(node)
+
+        return create_node(
+            name=node_class.__name__,
+            base_node=cls.POLYMORPHIC_NODE_CLS,
+            bases=(node_class,),
+            namespace=dict(__either__=tuple(case_nodes), __module__=node_class.__module__),
+        )
+
+
+if typing.TYPE_CHECKING:
+    from builtins import classmethod as case
+
+else:
+    case = case_decorator
+
+
+__all__ = ("PolymorphicNode", "case", "collect_cases", "polymorphic")
