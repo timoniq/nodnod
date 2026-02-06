@@ -52,7 +52,7 @@ def initialize_node_with_externals(cls: type[Node], values: set[Value]) -> Compo
     for value in values:
         if value.cls is Externals:
             externals_value = value.value
-        else:
+        elif value.cls in names:
             compose_kwargs[names[value.cls]] = value.value
 
     for external_name in externals:
