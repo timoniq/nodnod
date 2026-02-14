@@ -1,6 +1,6 @@
 import pytest
 
-from nodnod.utils.call import call_with_context
+from nodnod.utils.call import NameNotFoundError, call_with_context
 
 
 def test_call_with_context():
@@ -53,5 +53,5 @@ def test_call_with_context_key_error():
     def func(a: int, /, b: str, c: bool = False):
         ...
 
-    with pytest.raises(KeyError, match="b"):
+    with pytest.raises(NameNotFoundError, match="Name `b` was not found"):
         call_with_context(func, {"a": 1})

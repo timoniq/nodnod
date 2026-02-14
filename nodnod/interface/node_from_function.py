@@ -8,7 +8,7 @@ from nodnod.error import NodeError
 from nodnod.interface.composable import Composable
 from nodnod.interface.is_node import is_node
 from nodnod.node import ComposeResponse, Node, initialize_forward_refs, is_injection
-from nodnod.utils.call import call_with_context
+from nodnod.utils.call import NameNotFoundError, call_with_context
 from nodnod.utils.create_node import create_node, create_node_from_composable
 from nodnod.utils.injection import get_injection_type
 from nodnod.utils.is_type import is_type
@@ -19,7 +19,7 @@ type LikeNode = typing.Any
 NODE_NAMESPACE: typing.Final = frozenset({k for k in Node.__dict__ if k not in type(Node).__dict__})
 
 
-def collect_externals_and_names_hook(
+def collect_internals_and_externals_hook(
     node: type[Node],
     dep_name: str,
     dep_type: typing.Any,
@@ -38,10 +38,13 @@ def collect_externals_and_names_hook(
     return kungfu.Ok()
 
 
+collect_externals_and_names_hook = collect_internals_and_externals_hook
+
+
 @classmethod
 def initialize_node_with_externals(cls: type[Node], values: set[Value]) -> ComposeResponse[typing.Any]:
     externals: typing.Iterable[str] = getattr(cls, "__externals__", ())
-    names: dict[typing.Any, str] = getattr(cls, "__names__", {})
+    names: typing.Mapping[typing.Any, str] = getattr(cls, "__names__", {})
     compose_kwargs: dict[str, typing.Any] = {}
     externals_value: Externals = Externals()
 
@@ -57,15 +60,14 @@ def initialize_node_with_externals(cls: type[Node], values: set[Value]) -> Compo
 
     try:
         return call_with_context(cls.__compose__, compose_kwargs)
-    except KeyError as error:
-        dep_name = error.args[0]
+    except NameNotFoundError as error:
         raise NodeError(
-            "`{}` was not found in the externals. Inject it through `Externals`, "
-            "or, if it is a `Node` dependency, check its type.{}".format(
-                dep_name,
-                f"\n  * type of `{dep_name}` is unresolved `ForwardRef`, so it automatically becomes an external dependency."
-                if dep_name in names and isinstance(names[dep_name], ExternalDependency)
-                else f" ({dep_name}: {names[dep_name]})" if dep_name in names else "",
+            "{} Inject it through one of `Injection[T]` or "
+            "`Externals`, or, if it is a `Node` dependency, check its type.{}".format(
+                error,
+                f"\n  * type of `{error.name}` is unresolved `ForwardRef`, so it automatically becomes an external dependency."
+                if error.name in names and isinstance(names[error.name], ExternalDependency)
+                else f" ({error.name}: {names[error.name]})" if error.name in names else "",
             ),
         ) from None
 
@@ -81,7 +83,7 @@ def create_node_from_function(
     prohibit_intersaction_with_node_namespace: bool = True,
 ) -> type[Node]:
     if not callable(func):
-        raise TypeError(f"`func` must be kind of function, got `{type(func)}`.")
+        raise TypeError(f"`func` must be kind of function, got `{repr(func if isinstance(func, type) else type(func))}`.")
 
     node_name = (
         getattr(func.__code__, "co_qualname", None)
@@ -98,7 +100,7 @@ def create_node_from_function(
         Node,
         bases=bases,
         namespace={"__compose__": func, "__module__": module or getattr(func, "__module__", "<module>")} | namespace,
-        injection_hooks=(collect_externals_and_names_hook,),
+        injection_hooks=(collect_internals_and_externals_hook,),
     )
 
     if forward_refs is not None:
@@ -106,24 +108,22 @@ def create_node_from_function(
     else:
         initialize_forward_refs(getattr(func, "__globals__", {}), is_from_function=True)
 
-    if node.__injections__ is None:
-        node.__init_subclass__(injection_hooks=(collect_externals_and_names_hook,))
+    if node.__compose_names_by_type__ is None:
+        node.__init_subclass__(injection_hooks=(collect_internals_and_externals_hook,))
 
     dependencies = {
         dep_name: dep if is_node(dep) else create_node_from_composable(dep)
         for dep_name, dep in dependencies.items()
         if is_type(dep, Composable)
     } if dependencies else {}
+    names = _NameDict()
     externals: set[str] = getattr(node, "__externals__", set())
     internals: dict[str, typing.Any] = getattr(node, "__internals__", {})
-    names: dict[typing.Any, str] = getattr(node, "__names__", _NameDict())
 
     for dep_type, dep_name in node.__compose_names_by_type__.items():
-        if dep_name in internals:
-            names[internals[dep_name]] = dep_name
-            continue
-
         if dep_name in dependencies:
+            # Replace any dependency with a Composable dependency
+
             new_dependency = dependencies[dep_name]
             old_dependency = (
                 next((dep for dep in node.__dependencies__ if dep_type in (dep, dep.__type__)), None)
@@ -134,6 +134,9 @@ def create_node_from_function(
             if old_dependency is not None:
                 node.__dependencies__.remove(old_dependency)
 
+            if dep_name in internals:
+                del internals[dep_name]
+
             if dep_name in externals:
                 externals.remove(dep_name)
 
@@ -141,8 +144,16 @@ def create_node_from_function(
             names[new_dependency.__type__] = dep_name
             continue
 
-        if dep_name not in externals:
+        if dep_name in internals:
+            # Add an internal dependency (aka `Injection[T]`)
+            names[internals[dep_name]] = dep_name
+
+        elif dep_name not in externals:
+            # Add a composable dependency
             names[dep_type] = dep_name
+
+        # Otherwise, the dependency is external, i.e., already collected
+        # using `collect_internals_and_externals_hook`.
 
     if hasattr(node, "__internals__"):
         delattr(node, "__internals__")
