@@ -97,6 +97,7 @@ class Node[T = typing.Any, Root = typing.Any]:
         injection_hooks: tuple[InjectionHook, ...] = (),
     ) -> None:
         from nodnod.builder.build_queue import build_queue
+        from nodnod.error import NodeError
         from nodnod.interface.composable import Composable
         from nodnod.interface.create_result_node import create_result_node, is_result
         from nodnod.interface.generic import create_type_arg_node
@@ -227,7 +228,10 @@ class Node[T = typing.Any, Root = typing.Any]:
                             }
                         ),
                     ).then(
-                        lambda context: call_with_context(cls.__compose__, context),
+                        lambda context:
+                            call_with_context(cls.__compose__, context)
+                            .map_err(lambda name: NodeError(f"Name `{name}` was not found."))
+                            .unwrap(),
                     )
                 )
 

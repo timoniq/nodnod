@@ -1,7 +1,7 @@
 import pytest
 from typing_extensions import ForwardRef
 
-from nodnod import Node, Scope, scalar_node, create_agent_from_node, inject_externals
+from nodnod import Injection, Node, Scope, scalar_node, create_agent_from_node, inject_externals
 from nodnod.agent.event_loop.agent import EventLoopAgent
 from nodnod.interface.node_from_function import (
     Externals,
@@ -73,7 +73,7 @@ class TestCreateNodeFromFunction:
 
         node = create_node_from_function(func)
 
-        with pytest.raises(NodeError, match="`x` was not found in the externals. Inject it through `Externals`, or, if it is a `Node` dependency, check its type."):
+        with pytest.raises(NodeError, match=r"Name `x` was not found. Inject it through one of `Injection\[T\]` or `Externals`, or, if it is a `Node` dependency, check its type\.$"):
             node.__initialize__(set())
 
     @pytest.mark.asyncio
@@ -104,7 +104,7 @@ class TestCreateNodeFromFunction:
         with pytest.raises(TypeError, match="^`func` must be kind of function, got `.*`"):
             create_node_from_function(Dummy())  # type: ignore
 
-    def test_create_node_from_function_with_custom_dependencies(self):
+    def test_create_node_from_function_with_custom_dependencies_and_injections(self):
         @scalar_node
         class ANode:
             @classmethod
@@ -117,10 +117,11 @@ class TestCreateNodeFromFunction:
             def __compose__(cls) -> int:
                 ...
 
-        def func(n: ANode) -> None:
+        def func(n: ANode, b: Injection[int]) -> None:
             ...
 
-        node = create_node_from_function(func, dependencies={"n": BNode})  # type: ignore
+        node = create_node_from_function(func, dependencies={"n": BNode, "b": BNode})  # type: ignore
+        assert int not in node.__injections__
         assert BNode in node.__dependencies__
 
 
@@ -268,7 +269,7 @@ class TestCollectExternalsHook:
 
 class TestNodeFromFunctionErrors:
     def test_forward_ref_becomes_external_dependency(self):
-        from nodnod.node import FORWARD_REF_REQUESTS, INITIALIZED_FORWARD_REFS
+        from nodnod.node import FORWARD_REF_REQUESTS, INITIALIZED_FORWARD_REFS  # type: ignore
 
         def func_with_node_ref(dep: "NonExistentNodeType") -> int:  # type: ignore
             ...
