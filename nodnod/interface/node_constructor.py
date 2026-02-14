@@ -27,7 +27,7 @@ class NodeConstructor(Node, abstract=True):
 
         if initialize:
             cls.__initialize__ = lambda values: initialize_node_constructor(
-                lambda context: call_with_context(cls().__compose__, context),
+                lambda context: call_with_context(cls().__compose__, context).unwrap(),
                 cls.__compose_names_by_type__,
                 values,
             )
@@ -53,7 +53,7 @@ class NodeConstructor(Node, abstract=True):
             node,
             "__initialize__",
             lambda values: initialize_node_constructor(
-                lambda context: call_with_context(node(*items).__compose__, context),
+                lambda context: call_with_context(node(*items).__compose__, context).unwrap(),
                 node.__compose_names_by_type__,
                 values,
             ),
