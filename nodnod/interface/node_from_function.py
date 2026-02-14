@@ -12,8 +12,6 @@ from nodnod.utils.call import call_with_context
 from nodnod.utils.create_node import create_node, create_node_from_composable
 from nodnod.utils.injection import get_injection_type
 from nodnod.utils.is_type import is_type
-from nodnod.utils.misc import reverse_dict
-from nodnod.utils.resolve_signature import resolve_signature
 from nodnod.value import Value
 
 type LikeNode = typing.Any
@@ -27,16 +25,14 @@ def collect_externals_and_names_hook(
     dep_type: typing.Any,
 ) -> kungfu.Pulse[str]:
     if is_injection(dep_type):
-        return kungfu.Error("Injection is internal.")
+        if not hasattr(node, "__internals__"):
+            setattr(node, "__internals__", {})
+
+        getattr(node, "__internals__")[dep_name] = get_injection_type(dep_type, owner=node.__compose__)
+        return kungfu.Ok()
 
     if not hasattr(node, "__externals__"):
         setattr(node, "__externals__", set())
-
-    if not hasattr(node, "__names__"):
-        setattr(node, "__names__", _NameDict())
-
-    if isinstance(dep_type, ExternalDependency):
-        getattr(node, "__names__")[dep_type] = dep_name
 
     getattr(node, "__externals__").add(dep_name)
     return kungfu.Ok()
@@ -113,21 +109,27 @@ def create_node_from_function(
     if node.__injections__ is None:
         node.__init_subclass__(injection_hooks=(collect_externals_and_names_hook,))
 
-    node.__injections__.add(Externals)
-
     dependencies = {
         dep_name: dep if is_node(dep) else create_node_from_composable(dep)
         for dep_name, dep in dependencies.items()
         if is_type(dep, Composable)
     } if dependencies else {}
     externals: set[str] = getattr(node, "__externals__", set())
+    internals: dict[str, typing.Any] = getattr(node, "__internals__", {})
     names: dict[typing.Any, str] = getattr(node, "__names__", _NameDict())
-    reversed_names = reverse_dict(names)
 
-    for dep_name, dep_type in resolve_signature(func).merge().items():
+    for dep_type, dep_name in node.__compose_names_by_type__.items():
+        if dep_name in internals:
+            names[internals[dep_name]] = dep_name
+            continue
+
         if dep_name in dependencies:
             new_dependency = dependencies[dep_name]
-            old_dependency = next((dep for dep in node.__dependencies__ if dep.__type__ is dep_type), None)
+            old_dependency = (
+                next((dep for dep in node.__dependencies__ if dep_type in (dep, dep.__type__)), None)
+                if is_node(dep_type)
+                else None
+            )
 
             if old_dependency is not None:
                 node.__dependencies__.remove(old_dependency)
@@ -139,18 +141,14 @@ def create_node_from_function(
             names[new_dependency.__type__] = dep_name
             continue
 
-        if is_injection(dep_type):
-            dep_type = get_injection_type(dep_type, owner=func)
+        if dep_name not in externals:
+            names[dep_type] = dep_name
 
-        if isinstance(dep_type, ForwardRef):
-            if dep_name in reversed_names:
-                continue
-
-            dep_type = dep_type.__forward_arg__
-
-        names[dep_type] = dep_name
+    if hasattr(node, "__internals__"):
+        delattr(node, "__internals__")
 
     setattr(node, "__externals__", externals)
+    setattr(node, "__injections__", {Externals, *internals.values()})
     setattr(node, "__names__", names)
     setattr(node, "__traverse__", build_queue(node, list()))
     setattr(node, "__initialize__", initialize_node_with_externals)
