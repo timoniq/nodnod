@@ -5,6 +5,7 @@
 🧑‍🧑‍🧒‍🧒 Programming in Python enhanced with Nodes
 
 [![codecov](https://codecov.io/gh/timoniq/nodnod/branch/dev/graph/badge.svg)](https://codecov.io/gh/timoniq/nodnod)
+[![pypi](https://img.shields.io/pypi/v/nodnod.svg?labelColor=black&style=flat-square&logo=pypi)](https://pypi.org/project/nodnod)
 
 nodnod is a dependency injection tool
 
