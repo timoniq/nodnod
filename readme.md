@@ -40,16 +40,16 @@ nodnod provides many interfaces to build different kinds of dependencies:
 * **polymorphic** - node whose resolution may vary
 
   ```python
-  @polymorphic[Face]
-  class DetectedFace:
+  @polymorphic[float]
+  class Ratio:
       @case
-      def from_video(cls, video: Video) -> Face:
-          x, y = detect_face(video.frames[0]).expect(ComposeError("No face"))
-          return Face(x, y)
+      def from_video(cls, video: Video) -> float:
+          frame = video.frames[0]
+          return frame.width / frame.length
 
       @case
-      def from_photo(cls, photo: Photo) -> Face:
-          ...
+      def from_photo(cls, photo: Photo) -> float:
+          return photo.width / photo.length
   ```
 
 * **scalar** node disguises as its result for type checkers
@@ -82,7 +82,7 @@ nodnod provides many interfaces to build different kinds of dependencies:
 
   ```python
   @classmethod
-  def __compose__(cls, face: Option[DetectedFace]): ...
+  def __compose__(cls, ratio: Option[Ratio]): ...
   ```
 
 your contributions are welcome!
