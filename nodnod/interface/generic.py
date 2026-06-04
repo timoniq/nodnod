@@ -74,7 +74,7 @@ def create_type_arg_node(
             __injections__=set(),
             __compose__=lambda: getattr(generic_node, "__type_args__", {})[type_arg],
             __module__=__name__,
-        )
+        ),
     )
 
 

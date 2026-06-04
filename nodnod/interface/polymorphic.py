@@ -5,11 +5,14 @@ import kungfu
 from nodnod.interface.either import Either
 from nodnod.node import ComposeResponse, Node
 from nodnod.utils.create_node import create_node
+from nodnod.value import Value
 
 CASE_MARK: typing.Final = "IS_CASE"
 
 
-def case_decorator[Cls, R, **P](case_method: typing.Callable[typing.Concatenate[Cls, P], R], /) -> typing.Callable[P, R]:
+def case_decorator[Cls, R, **P](
+    case_method: typing.Callable[typing.Concatenate[Cls, P], R], /
+) -> typing.Callable[P, R]:
     if isinstance(case_method, classmethod):
         func = case_method.__func__
     else:
@@ -37,16 +40,14 @@ class PolymorphicNode[T](Either, abstract=True):
     is_scalar = False
 
     @classmethod
-    def __compose__(cls, node: kungfu.Sum) -> T:
-        if cls.is_scalar:
-            return node.v.value
-        return node.v
+    def __compose__(cls, node_value: Value) -> T | Value[T]:
+        return node_value.unbox() if cls.is_scalar else node_value
 
 
 class polymorphic[T]:  # noqa: N801
     POLYMORPHIC_NODE_CLS = PolymorphicNode
 
-    def __new__(cls, node_class: type[typing.Any]) -> type[PolymorphicNode[T]]:
+    def __new__(cls, node_class: type[typing.Any], /) -> type[PolymorphicNode[T]]:
         case_nodes: list[type[Node]] = []
 
         for case in collect_cases(node_class):

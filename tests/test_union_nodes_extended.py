@@ -38,13 +38,11 @@ class TestUnionNodesExtended:
     def test_create_union_node_with_option_type(self):
         class TestNode(Node):
             @classmethod
-            def __compose__(cls) -> None:
-                ...
+            def __compose__(cls) -> None: ...
 
         class IntNode(Node):
             @classmethod
-            def __compose__(cls) -> int:
-                ...
+            def __compose__(cls) -> int: ...
 
         union_node = create_union_node(typing.Union[IntNode, kungfu.Option[TestNode]])
 
@@ -54,8 +52,7 @@ class TestUnionNodesExtended:
     def test_create_union_node_with_result_type(self):
         class TestNode(Node):
             @classmethod
-            def __compose__(cls) -> int:
-                ...
+            def __compose__(cls) -> int: ...
 
         union_node = create_union_node(typing.Union[TestNode, kungfu.Result[TestNode, ValueError]])
 
@@ -65,8 +62,7 @@ class TestUnionNodesExtended:
     def test_create_union_node_with_composable_and_injected_types(self):
         class ComposableClass:
             @classmethod
-            def __compose__(cls) -> int:
-                ...
+            def __compose__(cls) -> int: ...
 
         union_node = create_union_node(typing.Union[ComposableClass, int])
 

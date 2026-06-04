@@ -29,8 +29,7 @@ class ErrorNode(Node):
     __type__ = str
 
     @classmethod
-    def __compose__(cls):
-        ...
+    def __compose__(cls): ...
 
 
 class TestResultNode(ResultNode):

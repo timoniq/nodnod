@@ -7,7 +7,7 @@ from nodnod.interface.either import ConcurrentEither, SequentialEither
 
 class TestEitherExtended:
     @pytest.mark.asyncio
-    async def test_either_with_non_scalar_result(self):
+    async def test_either_with_str_injection_type_and_non_scalar_result(self):
         @scalar_node
         class SuccessNode:
             @classmethod
@@ -17,6 +17,7 @@ class TestEitherExtended:
         class CustomEither(SequentialEither):
             __either__ = (SuccessNode,)
 
+        CustomEither.__injections__ = set((str,))
         agent = EventLoopAgent.build({CustomEither})
         scope = Scope(detail="test")
 

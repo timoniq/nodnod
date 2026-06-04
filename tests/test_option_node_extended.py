@@ -16,7 +16,6 @@ class TestOptionNodeExtended:
         with pytest.raises(NodeBuildError, match="`int` does not have a `__compose__` method"):
             create_option_node(kungfu.Option[int])
 
-
     def test_create_option_node_with_node_type(self):
         class TestNode(Node, abstract=True):
             __dependencies__ = set()

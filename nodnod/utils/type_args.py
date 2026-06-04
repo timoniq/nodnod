@@ -5,7 +5,9 @@ type TypeParameter = typing.TypeVar | typing.TypeVarTuple | typing.ParamSpec
 type TypeParameters = tuple[TypeParameter, ...]
 
 
-def get_type_args_values(args: tuple[typing.Any, ...], parameters: TypeParameters) -> dict[typing.TypeVar, typing.Any]:
+def get_type_args_values(
+    args: tuple[typing.Any, ...], parameters: TypeParameters
+) -> dict[typing.TypeVar, typing.Any]:
     if not parameters:
         return {}
 
@@ -15,7 +17,7 @@ def get_type_args_values(args: tuple[typing.Any, ...], parameters: TypeParameter
     for i, parameter in enumerate(parameters):
         if isinstance(parameter, typing.TypeVarTuple):
             count = max(len(args) - index - (len(parameters) - i - 1), 0)
-            type_args[parameter] = tuple(args[index:index + count])
+            type_args[parameter] = tuple(args[index : index + count])
             index += count
         elif index < len(args):
             type_args[parameter] = args[index]

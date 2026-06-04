@@ -22,7 +22,11 @@ class Scope(OrderedDict[AnyType, Value]):
         super().__init__([(Scope, Value(Scope, self))])
 
     def __repr__(self) -> str:
-        return f"Scope {self.detail} " + (", ".join(f"{node_t.__name__}: {value!r}" for node_t, value in self.items() if value.value is not self) if self else "(empty)")
+        return f"Scope {self.detail} " + (
+            ", ".join(f"{node_t.__name__}: {value!r}" for node_t, value in self.items() if value.value is not self)
+            if self
+            else "(empty)"
+        )
 
     def retrieve(self, key: AnyType) -> Option[Value]:
         if key not in self:
@@ -90,11 +94,15 @@ class Scope(OrderedDict[AnyType, Value]):
         self[t] = Value(t, value)
 
 
-def validate_local_scope_is_linked_to_node_scopes(local_scope: Scope, node_scopes: dict[type[Node], Scope]) -> None:
+def validate_local_scope_is_linked_to_node_scopes(
+    local_scope: Scope, node_scopes: dict[type[Node], Scope]
+) -> None:
     if __debug__:
         for node, node_scope in node_scopes.items():
             if not local_scope.has_parent(node_scope):
-                raise NodeError(f"`{node.__name__}`'s scope ({node_scope.detail}) is not a parent of local scope ({local_scope.detail})")
+                raise NodeError(
+                    f"`{node.__name__}`'s scope ({node_scope.detail}) is not a parent of local scope ({local_scope.detail})"
+                )
 
 
 __all__ = ("Scope", "validate_local_scope_is_linked_to_node_scopes")

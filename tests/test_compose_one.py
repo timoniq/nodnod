@@ -62,10 +62,7 @@ class TestComposeOne:
             def __compose__(cls, a: ConfigA, b: ConfigB) -> int:
                 return a.value + b.value
 
-        result = await compose_one(
-            NodeWithMultipleInjections,
-            injections={ConfigA: ConfigA(), ConfigB: ConfigB()}
-        )
+        result = await compose_one(NodeWithMultipleInjections, injections={ConfigA: ConfigA(), ConfigB: ConfigB()})
         assert result == 30
 
     @pytest.mark.asyncio

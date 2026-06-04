@@ -4,7 +4,9 @@ import typing
 import kungfu
 
 
-async def generator_asend[T, Send](generator: typing.AsyncGenerator[T, Send], send: Send = None) -> kungfu.Option[T]:
+async def generator_asend[T, Send](
+    generator: typing.AsyncGenerator[T, Send], send: Send = None
+) -> kungfu.Option[T]:
     with contextlib.suppress(StopAsyncIteration):
         value = await generator.asend(send)
         return kungfu.Some(value)

@@ -12,8 +12,7 @@ def test_node_with_forward_reference():
 
     class NodeWithForwardRef(Node):
         @classmethod
-        def __compose__(cls, dep: "ForwardRefNode") -> None:
-            ...
+        def __compose__(cls, dep: "ForwardRefNode") -> None: ...
 
     assert "ForwardRefNode" in FORWARD_REF_REQUESTS
     assert NodeWithForwardRef in FORWARD_REF_REQUESTS["ForwardRefNode"]
@@ -30,8 +29,7 @@ def test_node_with_type_alias():
 
     class NodeWithTypeAlias(Node):
         @classmethod
-        def __compose__(cls, value: IntAlias) -> None:
-            ...
+        def __compose__(cls, value: IntAlias) -> None: ...
 
     assert int in NodeWithTypeAlias.__injections__
 
@@ -43,8 +41,7 @@ def test_node_with_type_parameter():
         __type_params__ = (T,)
 
         @classmethod
-        def __compose__(cls, arg_type: type[T]) -> None:
-            ...
+        def __compose__(cls, arg_type: type[T]) -> None: ...
 
     assert len(GenericNode.__dependencies__) == 1
 
@@ -54,8 +51,7 @@ def test_node_with_type_parameter_invalid():
 
         class InvalidTypeNode(Node):
             @classmethod
-            def __compose__(cls, arg_type: type) -> None:
-                ...
+            def __compose__(cls, arg_type: type) -> None: ...
 
 
 def test_node_with_type_parameter_non_typevar():
@@ -63,8 +59,7 @@ def test_node_with_type_parameter_non_typevar():
 
         class NonTypeVarNode(Node):
             @classmethod
-            def __compose__(cls, arg_type: type[int]) -> None:
-                ...
+            def __compose__(cls, arg_type: type[int]) -> None: ...
 
 
 def test_injection_hook():
@@ -81,8 +76,7 @@ def test_injection_hook():
 
     from nodnod.utils.create_node import create_node
 
-    def compose_func(custom_dep: str, regular_dep: int) -> None:
-        ...
+    def compose_func(custom_dep: str, regular_dep: int) -> None: ...
 
     NodeWithCustomInjection = create_node(
         name="NodeWithCustomInjection",
@@ -103,8 +97,7 @@ def test_injection_hook():
 def test_injection_annotation():
     class NodeWithInjection(Node):
         @classmethod
-        def __compose__(cls, injected: Injection[str]) -> None:
-            ...
+        def __compose__(cls, injected: Injection[str]) -> None: ...
 
     assert str in NodeWithInjection.__injections__
 
@@ -112,8 +105,7 @@ def test_injection_annotation():
 def test_injection_annotation_processed():
     class NodeWithMultipleInjections(Node):
         @classmethod
-        def __compose__(cls, injected1: Injection[str], injected2: Injection[int]) -> None:
-            ...
+        def __compose__(cls, injected1: Injection[str], injected2: Injection[int]) -> None: ...
 
     injections = NodeWithMultipleInjections.__injections__ or set()
     assert str in injections
@@ -126,15 +118,13 @@ def test_forward_ref_resolution_with_existing_ref():
 
     class ExistingNode(Node):
         @classmethod
-        def __compose__(cls) -> None:
-            ...
+        def __compose__(cls) -> None: ...
 
     INITIALIZED_FORWARD_REFS["ExistingNode"] = ExistingNode
 
     class NodeUsingExistingRef(Node):
         @classmethod
-        def __compose__(cls, dep: "ExistingNode") -> None:
-            ...
+        def __compose__(cls, dep: "ExistingNode") -> None: ...
 
     assert ExistingNode in NodeUsingExistingRef.__dependencies__
 
@@ -142,8 +132,7 @@ def test_forward_ref_resolution_with_existing_ref():
 def test_node_repr():
     class TestReprNode(Node):
         @classmethod
-        def __compose__(cls) -> None:
-            ...
+        def __compose__(cls) -> None: ...
 
     instance = TestReprNode()
     assert repr(instance) == "<node `TestReprNode`>"
@@ -152,8 +141,7 @@ def test_node_repr():
 def test_node_type_self_assignment():
     class SelfTypeNode(Node):
         @classmethod
-        def __compose__(cls) -> None:
-            ...
+        def __compose__(cls) -> None: ...
 
     assert SelfTypeNode.__type__ is SelfTypeNode
 
@@ -165,8 +153,7 @@ def test_node_with_type_var_tuple():
         __type_params__ = (Ts,)
 
         @classmethod
-        def __compose__(cls, args: tuple[typing.Unpack[Ts]]) -> None:
-            ...
+        def __compose__(cls, args: tuple[typing.Unpack[Ts]]) -> None: ...
 
     assert len(GenericNodeWithTuple.__dependencies__) == 1
 
@@ -176,8 +163,7 @@ def test_node_with_tuple_invalid_no_args():
 
         class InvalidTupleNode(Node):
             @classmethod
-            def __compose__(cls, arg_tuple: tuple) -> None:
-                ...
+            def __compose__(cls, arg_tuple: tuple) -> None: ...
 
 
 def test_node_with_tuple_invalid_non_unpack():
@@ -185,8 +171,7 @@ def test_node_with_tuple_invalid_non_unpack():
 
         class NonUnpackTupleNode(Node):
             @classmethod
-            def __compose__(cls, arg_tuple: tuple[int, str]) -> None:
-                ...
+            def __compose__(cls, arg_tuple: tuple[int, str]) -> None: ...
 
 
 def test_node_with_tuple_invalid_unpack_non_typevartuple():
@@ -194,8 +179,7 @@ def test_node_with_tuple_invalid_unpack_non_typevartuple():
 
         class UnpackNonTVTNode(Node):
             @classmethod
-            def __compose__(cls, arg_tuple: tuple[typing.Unpack[tuple[int, str]]]) -> None:
-                ...
+            def __compose__(cls, arg_tuple: tuple[typing.Unpack[tuple[int, str]]]) -> None: ...
 
 
 def test_node_with_type_var_tuple_mixed_params():
@@ -212,7 +196,6 @@ def test_node_with_type_var_tuple_mixed_params():
             first_type: type[T],
             middle_types: tuple[typing.Unpack[Ts]],
             last_type: type[U],
-        ) -> None:
-            ...
+        ) -> None: ...
 
     assert len(MixedGenericNode.__dependencies__) == 3

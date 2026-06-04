@@ -7,8 +7,7 @@ from nodnod.interface.create_result_node import create_result_node
 
 class TestResultNodeExtended:
     def test_create_scalar_node_from_function(self):
-        def my_func() -> int:
-            ...
+        def my_func() -> int: ...
 
         scalar_node_my_func = scalar_node(my_func)
 
@@ -16,8 +15,7 @@ class TestResultNodeExtended:
         assert scalar_node_my_func.__compose__ == my_func  # type: ignore
 
     def test_scalar_node_error_on_non_function_or_class(self):
-        class Dummy:
-            ...
+        class Dummy: ...
 
         with pytest.raises(TypeError, match="^scalar_node must be kind of class or function, got `.*`"):
             scalar_node(Dummy())

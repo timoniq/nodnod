@@ -1,11 +1,12 @@
-from nodnod.builder.build_queue import build_queue
 import collections
+
+from nodnod.builder.build_queue import build_queue
 from nodnod.node import Node
 
 
 def build_parallels(nodes: set[type[Node]]) -> list[set[type[Node]]]:
     """Computes isolated layers of nodes that can be composed in parallel"""
-    
+
     initiators = collections.defaultdict[type[Node], set[type[Node]]](set)
     initiation = dict[type[Node], int]()
     all_nodes = list[type[Node]]()
@@ -18,7 +19,7 @@ def build_parallels(nodes: set[type[Node]]) -> list[set[type[Node]]]:
         for dependency in dependencies:
             initiators[dependency].add(node)
         initiation[node] = len(dependencies)
-    
+
     parallels = list[set[type[Node]]]()
 
     queue = collections.deque([node for node in all_nodes if initiation.get(node, 0) == 0])

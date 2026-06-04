@@ -35,7 +35,7 @@ class NodeConstructor(Node, abstract=True):
     def __class_getitem__(cls, item: typing.Any | tuple[typing.Any, ...], /) -> typing.Any:
         items = (item,) if not isinstance(item, tuple) else item
         node = type(
-            f"{cls.__name__}[{", ".join(str(item) for item in items)}]",
+            f"{cls.__name__}[{', '.join(str(item) for item in items)}]",
             (cls,),
             dict(
                 __module__=cls.__module__,

@@ -1,14 +1,15 @@
+import asyncio
 from typing import Self
-from nodnod.agent.layer.steps import Step, Parallel, Single, StepType
-from nodnod.builder.build_parallels import build_parallels
+
+import kungfu
 
 from nodnod.agent.base import Agent
+from nodnod.agent.layer.steps import Parallel, Single, Step, StepType
+from nodnod.builder.build_parallels import build_parallels
+from nodnod.error import NodeError
 from nodnod.node import Node
 from nodnod.scope import Scope, validate_local_scope_is_linked_to_node_scopes
-from nodnod.error import NodeError
 from nodnod.value import Value
-import asyncio
-import kungfu
 
 
 def build_steps(nodes: set[type[Node]]) -> list[Step]:
@@ -48,11 +49,9 @@ class LayerAgent(Agent):
 
         for step in self.steps:
             match step:
-
                 case Parallel(nodes=nodes):
                     coros = [
-                        compose_node(node, mapped_scopes.get(node, local_scope), local_scope)
-                        for node in nodes
+                        compose_node(node, mapped_scopes.get(node, local_scope), local_scope) for node in nodes
                     ]
                     results = await asyncio.gather(*coros, return_exceptions=True)
 

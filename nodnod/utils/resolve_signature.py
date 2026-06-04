@@ -66,11 +66,12 @@ def resolve_callable_annotations(
     localns: dict[str, typing.Any] | None = None
 
     if bound_class is not None:
-        localns = {
-            param.__name__: param
-            for param in getattr(bound_class, "__type_params__", ())
+        localns = {param.__name__: param for param in getattr(bound_class, "__type_params__", ())}
+        localns |= {
+            k: v
+            for k, v in bound_class.__dict__.items()
+            if not is_routine_method(v) and not is_routine_descriptor(v)
         }
-        localns |= {k: v for k, v in bound_class.__dict__.items() if not is_routine_method(v) and not is_routine_descriptor(v)}
 
     for name, annotation in get_annotations(
         obj,
@@ -79,7 +80,11 @@ def resolve_callable_annotations(
         format=Format.FORWARDREF,
     ).items():
         if isinstance(annotation, str):
-            module = sys.modules.get(obj_mod, None) if (obj_mod := getattr(obj, "__module__", None)) is not None else None
+            module = (
+                sys.modules.get(obj_mod, None)
+                if (obj_mod := getattr(obj, "__module__", None)) is not None
+                else None
+            )
             annotation = ForwardRef(arg=annotation, is_argument=True, module=module)
 
         if not isinstance(annotation, ForwardRef):

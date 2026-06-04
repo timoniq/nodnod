@@ -9,14 +9,14 @@ def repr_node_error(node_error: NodeError, indent: int = 0) -> str:
     if node_error.from_error:
         current = f"{prefix}{node_error.detail}"
         child = repr_node_error(node_error.from_error, indent=indent + 1)
-        return f"{current}\n{prefix}  ← {child[len(prefix)+2:]}"
+        return f"{current}\n{prefix}  ← {child[len(prefix) + 2 :]}"
 
     if node_error.from_many:
         current = f"{prefix}{node_error.detail}"
         lines = [current]
         for error in node_error.from_many:
             child_repr = repr_node_error(error, indent=indent + 1)
-            lines.append(f"{prefix}  * {child_repr[len(prefix)+2:]}")
+            lines.append(f"{prefix}  * {child_repr[len(prefix) + 2 :]}")
         return "\n".join(lines)
 
     return f"{prefix}{node_error.detail}"

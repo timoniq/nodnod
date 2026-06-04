@@ -1,3 +1,5 @@
+# type: ignore
+
 import asyncio
 import dataclasses
 import typing
@@ -23,7 +25,7 @@ from nodnod.utils.prepare_values import prepare_values
 
 
 @generic_node
-#@dataclasses.dataclass
+# @dataclasses.dataclass
 class Lolik[T: (str, int), *Ts, X: str | int](DataNode, abstract=True):
     def __init__(self, t: T, x: X):
         self.t = t
@@ -45,8 +47,7 @@ class TypeArgs[*Ts]:
 
 
 class Interface:
-    def get_lol(self) -> str:
-        ...
+    def get_lol(self) -> str: ...
 
 
 class MyInterface:
@@ -59,6 +60,7 @@ class A:
     @classmethod
     async def __compose__(cls):
         yield int(11)
+
 
 @scalar_node
 class Bitchnode:

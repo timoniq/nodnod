@@ -1,5 +1,6 @@
-from nodnod.node import Node
 from nodnod.error import NodeBuildError
+from nodnod.node import Node
+
 
 def validate_no_circular_dependency(final: type[Node], parents: list[type[Node]]) -> None:
     if final in parents:

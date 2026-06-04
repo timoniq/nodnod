@@ -14,7 +14,7 @@ def build_queue(final: type["Node"], queue: "Queue") -> "Queue":
         if dependency in queue:
             continue
         build_queue(dependency, queue)
-    
+
     if final not in queue:
         queue.append(final)
     return queue

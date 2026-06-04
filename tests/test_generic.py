@@ -9,8 +9,7 @@ def test_prepare_generic_node_single_type():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithOneGeneric, int)
 
@@ -23,8 +22,7 @@ def test_prepare_generic_node_tuple_types():
     class _ComposableWithMultiGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"), typing.TypeVar("U"))
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithMultiGeneric, (int, str))
 
@@ -37,8 +35,7 @@ def test_prepare_generic_node_caching():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result1 = prepare_generic_node(_ComposableWithOneGeneric, int)
     result2 = prepare_generic_node(_ComposableWithOneGeneric, int)
@@ -49,8 +46,7 @@ def test_prepare_generic_node_different_types():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result1 = prepare_generic_node(_ComposableWithOneGeneric, int)
     result2 = prepare_generic_node(_ComposableWithOneGeneric, str)
@@ -64,8 +60,7 @@ def test_prepare_generic_node_sets_generics_attribute():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithOneGeneric, float)
     assert hasattr(_ComposableWithOneGeneric, "__generics__")
@@ -77,8 +72,7 @@ def test_generic_node_creation():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     GenericTestNode = generic_node(_ComposableWithOneGeneric)
 
@@ -90,8 +84,7 @@ def test_generic_node_class_getitem():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     GenericTestNode = generic_node(_ComposableWithOneGeneric)
 
@@ -105,8 +98,7 @@ def test_create_type_arg_node():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     T = typing.TypeVar("T")
     generic_node_instance = prepare_generic_node(_ComposableWithOneGeneric, int)
@@ -123,8 +115,7 @@ def test_create_type_arg_node_compose():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     T = typing.TypeVar("T")
     generic_node_instance = prepare_generic_node(_ComposableWithOneGeneric, int)
@@ -143,8 +134,7 @@ def test_prepare_generic_node_attributes():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithOneGeneric, str)
 
@@ -159,8 +149,7 @@ def test_prepare_generic_node_inheritance():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithOneGeneric, bool)
 
@@ -172,8 +161,7 @@ def test_multiple_generics_storage():
     class _ComposableWithOneGeneric(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     node1 = prepare_generic_node(_ComposableWithOneGeneric, int)
     node2 = prepare_generic_node(_ComposableWithOneGeneric, str)
@@ -194,8 +182,7 @@ def test_prepare_generic_node_with_type_var_tuple_only():
     class _ComposableWithTypeVarTuple(Composable[typing.Any]):
         __type_params__ = (typing.TypeVarTuple("Ts"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithTypeVarTuple, (int, str, float))
 
@@ -208,8 +195,7 @@ def test_prepare_generic_node_with_type_var_tuple_empty():
     class _ComposableWithTypeVarTuple(Composable[typing.Any]):
         __type_params__ = (typing.TypeVarTuple("Ts"),)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithTypeVarTuple, ())
 
@@ -222,8 +208,7 @@ def test_prepare_generic_node_with_type_var_and_type_var_tuple():
     class _ComposableWithMixed(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"), typing.TypeVarTuple("Ts"))
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithMixed, (int, str, float, bool))
 
@@ -236,8 +221,7 @@ def test_prepare_generic_node_with_type_var_tuple_and_type_var():
     class _ComposableWithMixed(Composable[typing.Any]):
         __type_params__ = (typing.TypeVarTuple("Ts"), typing.TypeVar("U"))
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithMixed, (int, str, float, bool))
 
@@ -250,8 +234,7 @@ def test_prepare_generic_node_with_type_var_tuple_between_type_vars():
     class _ComposableWithMixed(Composable[typing.Any]):
         __type_params__ = (typing.TypeVar("T"), typing.TypeVarTuple("Ts"), typing.TypeVar("U"))
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithMixed, (int, str, float, bool))
 
@@ -265,8 +248,7 @@ def test_prepare_generic_node_type_var_tuple_type_args_values():
         Ts = typing.TypeVarTuple("Ts")
         __type_params__ = (Ts,)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithTypeVarTuple, (int, str, float))
 
@@ -282,8 +264,7 @@ def test_prepare_generic_node_mixed_type_args_values():
         U = typing.TypeVar("U")
         __type_params__ = (T, Ts, U)
 
-        def __compose__(self):
-            ...
+        def __compose__(self): ...
 
     result = prepare_generic_node(_ComposableWithMixed, (int, str, float, bool))
 

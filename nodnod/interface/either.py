@@ -1,7 +1,11 @@
-from nodnod.node import Node
-from nodnod.compose import ComposeResponse
-import kungfu
 import typing
+
+import kungfu
+
+from nodnod.compose import ComposeResponse
+from nodnod.error import NodeError
+from nodnod.node import Node
+from nodnod.value import Value
 
 
 class Either(Node[kungfu.Sum], abstract=True):
@@ -10,19 +14,17 @@ class Either(Node[kungfu.Sum], abstract=True):
 
     __either__: tuple[type[Node], ...]
 
-    def __init__(self, value: typing.Any):
+    def __init__(self, value: typing.Any) -> None:
         self.value = value
 
     @classmethod
-    def __compose__(cls, node: kungfu.Sum):
-        if cls.is_scalar:
-            return node.v.value
-        return cls(node.v.value)
+    def __compose__(cls, node_value: Value) -> typing.Any:
+        value = node_value.unbox()
+        return value if cls.is_scalar else cls(value)
 
     @classmethod
-    def __initialize__(cls, nodes: set[Node]) -> ComposeResponse:
-        node = nodes.copy().pop()
-        return cls.__compose__(kungfu.Sum(node))
+    def __initialize__(cls, values: set[Value]) -> ComposeResponse:
+        return cls.__compose__(next(iter(values)))
 
     def __init_subclass__(cls, abstract: bool = False) -> None:
         if not abstract:
