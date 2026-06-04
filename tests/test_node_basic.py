@@ -22,13 +22,15 @@ class TestBasicNode:
 
         class NodeB(Node):
             @classmethod
-            def __compose__(cls, a: NodeA) -> None: ...
+            def __compose__(cls, a: NodeA) -> None:
+                ...
 
         assert NodeA in NodeB.__dependencies__
 
     def test_scalar_node_decorator_on_function(self):
         @scalar_node
-        def my_function() -> None: ...
+        def my_function() -> None:
+            ...
 
         assert issubclass(my_function, Node)
 
@@ -41,7 +43,8 @@ class TestDataNode:
             name: str
 
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         assert issubclass(TestData, DataNode)
         assert issubclass(TestData, Node)
@@ -56,10 +59,7 @@ class TestNodeErrorForwardRefDependency:
 
         INITIALIZED_FORWARD_REFS["Dummy"] = "Dummy"
 
-        with pytest.raises(
-            LookupError,
-            match=r"^Unresolved dependency for `dep` of `NodeA`, it looks like a `ForwardRef` that could not be resolved\.$",
-        ):
+        with pytest.raises(LookupError, match=r"^Unresolved dependency for `dep` of `NodeA`, it looks like a `ForwardRef` that could not be resolved\.$"):
             NodeA.__init_subclass__()
 
 

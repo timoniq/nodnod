@@ -33,7 +33,8 @@ class TestInitializeNodeConstructor:
 class TestNodeConstructorBasic:
     def test_node_constructor_sets_initialize(self):
         class MyConstructor(NodeConstructor):
-            def __compose__(self) -> int: ...
+            def __compose__(self) -> int:
+                ...
 
         assert MyConstructor.__initialize__ is not None
 
@@ -83,9 +84,11 @@ class TestNodeConstructorClassGetitem:
         class Parameterized(NodeConstructor):
             value: int
 
-            def __init__(self, value: int): ...
+            def __init__(self, value: int):
+                ...
 
-            def __compose__(self) -> int: ...
+            def __compose__(self) -> int:
+                ...
 
         node = Parameterized[5]
 
@@ -97,9 +100,11 @@ class TestNodeConstructorClassGetitem:
             a: int
             b: str
 
-            def __init__(self, a: int, b: str): ...
+            def __init__(self, a: int, b: str):
+                ...
 
-            def __compose__(self) -> str: ...
+            def __compose__(self) -> str:
+                ...
 
         node = MultiParam[10, "hello"]
 
@@ -146,7 +151,8 @@ class TestNodeConstructorIntegration:
 
     @pytest.mark.asyncio
     async def test_parameterized_with_multiple_args(self):
-        class MyNode(Node, abstract=True): ...
+        class MyNode(Node, abstract=True):
+            ...
 
         class Calculator(NodeConstructor):
             def __init__(self, a: int, b: int, op: str):

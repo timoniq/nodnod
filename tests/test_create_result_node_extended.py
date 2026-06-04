@@ -14,11 +14,13 @@ def test_create_result_node_build_error():
 def test_create_result_node_different_types():
     class StrNode(Node):
         @classmethod
-        def __compose__(cls) -> str: ...
+        def __compose__(cls) -> str:
+            ...
 
     class ListNode(Node):
         @classmethod
-        def __compose__(cls) -> list[int]: ...
+        def __compose__(cls) -> list[int]:
+            ...
 
     result_node1 = create_result_node(kungfu.Result[StrNode, RuntimeError])
     result_node2 = create_result_node(kungfu.Result[ListNode, TypeError])
@@ -27,7 +29,6 @@ def test_create_result_node_different_types():
     assert result_node1.__error__ is RuntimeError
     assert result_node2.__from_node__ is ListNode
     assert result_node2.__error__ is TypeError
-
 
 def test_create_result_node_no_type_args():
     with pytest.raises(NodeBuildError) as exc_info:
@@ -39,7 +40,8 @@ def test_create_result_node_no_type_args():
 def test_create_result_node_caching():
     class IntNode(Node):
         @classmethod
-        def __compose__(cls) -> str: ...
+        def __compose__(cls) -> str:
+            ...
 
     result_node1 = create_result_node(kungfu.Result[IntNode, ValueError])
     result_node2 = create_result_node(kungfu.Result[IntNode, ValueError])

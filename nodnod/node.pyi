@@ -27,8 +27,6 @@ class Node[T = typing.Any, Root = typing.Any]:
     __compose__: typing.Callable[..., ComposeResponse[T]]
     __compose_names_by_type__: dict[typing.Any, str]
 
-    def __init_subclass__(
-        cls, abstract: bool = False, injection_hooks: tuple[InjectionHook, ...] = ()
-    ) -> None: ...
+    def __init_subclass__(cls, abstract: bool = False, injection_hooks: tuple[InjectionHook, ...] = ()) -> None: ...
 
 __all__ = ("Scalar", "Injection", "Node", "Queue", "dummy_compose", "is_injection", "initialize_forward_refs")

@@ -45,7 +45,10 @@ class EventLoopAgent(Agent):
 
             if issubclass(node, Either):
                 if node.is_concurrent:
-                    dependencies = [futures[dependency] for dependency in node.__dependencies__]
+
+                    dependencies = [
+                        futures[dependency] for dependency in node.__dependencies__
+                    ]
 
                     collect_either = asyncio.Task(
                         dependency_concurrent_either_coroutine(
@@ -54,6 +57,7 @@ class EventLoopAgent(Agent):
                     )
 
                 else:
+
                     first_dependency_node = node.__either__[0]
                     first_dependency_future = futures[first_dependency_node]
 
@@ -64,12 +68,13 @@ class EventLoopAgent(Agent):
                             (first_dependency_node, first_dependency_future),
                             other_dependencies,
                             futures,
-                            pusher=lambda _futures, _node: self.__class__(
-                                getattr(_node, "__traverse__")
-                            ).push_futures(
-                                local_scope,
-                                mapped_scopes,
-                                _futures,
+                            pusher=lambda _futures, _node: (
+                                self.__class__(getattr(_node, "__traverse__"))
+                                .push_futures(
+                                    local_scope,
+                                    mapped_scopes,
+                                    _futures,
+                                )
                             ),
                             mapped_scopes=mapped_scopes,
                             local_scope=local_scope,
@@ -95,7 +100,10 @@ class EventLoopAgent(Agent):
                 )
 
             else:
-                dependencies = [futures[dependency] for dependency in node.__dependencies__]
+
+                dependencies = [
+                    futures[dependency] for dependency in node.__dependencies__
+                ]
                 task = asyncio.Task(
                     compose_coroutine(
                         node,

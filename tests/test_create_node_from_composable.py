@@ -12,7 +12,8 @@ class TestCreateNodeFromComposable:
     def test_creates_node_from_simple_composable(self):
         class SimpleComposable:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(SimpleComposable)
 
@@ -25,11 +26,13 @@ class TestCreateNodeFromComposable:
     def test_creates_node_from_composable_with_dependencies(self):
         class DependencyComposable:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         class MainComposable:
             @classmethod
-            def __compose__(cls, dep: DependencyComposable) -> None: ...
+            def __compose__(cls, dep: DependencyComposable) -> None:
+                ...
 
         node_class = create_node_from_composable(MainComposable)
 
@@ -41,7 +44,8 @@ class TestCreateNodeFromComposable:
     def test_creates_node_from_async_composable(self):
         class AsyncComposable:
             @classmethod
-            async def __compose__(cls) -> None: ...
+            async def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(AsyncComposable)
 
@@ -68,7 +72,8 @@ class TestCreateNodeFromComposable:
     def test_caching_behavior(self):
         class CachedComposable:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class_1 = create_node_from_composable(CachedComposable)
         node_class_2 = create_node_from_composable(CachedComposable)
@@ -77,11 +82,13 @@ class TestCreateNodeFromComposable:
     def test_different_composables_create_different_nodes(self):
         class ComposableA:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         class ComposableB:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class_a = create_node_from_composable(ComposableA)
         node_class_b = create_node_from_composable(ComposableB)
@@ -97,7 +104,8 @@ class TestCreateNodeFromComposable:
             __module__ = "test.module"
 
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(ModuleComposable)
 
@@ -106,7 +114,8 @@ class TestCreateNodeFromComposable:
     def test_created_node_inherits_from_node(self):
         class InheritanceComposable:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(InheritanceComposable)
 
@@ -116,7 +125,8 @@ class TestCreateNodeFromComposable:
     def test_name_format(self):
         class NameTestComposable:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(NameTestComposable)
 
@@ -132,7 +142,8 @@ class TestCreateNodeFromComposable:
                 *args: typing.Any,
                 keyword_param: bool = False,
                 **kwargs: typing.Any,
-            ) -> None: ...
+            ) -> None:
+                ...
 
         node_class = create_node_from_composable(ComplexComposable)
 
@@ -142,7 +153,8 @@ class TestCreateNodeFromComposable:
     def test_composable_with_generic_return_type(self):
         class GenericComposable:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(GenericComposable)
 
@@ -155,7 +167,8 @@ class TestCreateNodeFromComposable:
             custom_attr = "custom_value"
 
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(AttributeComposable)
 
@@ -171,14 +184,16 @@ class TestCreateNodeFromComposable:
         def create_composable_a():
             class SameName:
                 @classmethod
-                def __compose__(cls) -> None: ...
+                def __compose__(cls) -> None:
+                    ...
 
             return SameName
 
         def create_composable_b():
             class SameName:
                 @classmethod
-                def __compose__(cls) -> None: ...
+                def __compose__(cls) -> None:
+                    ...
 
             return SameName
 
@@ -195,7 +210,8 @@ class TestCreateNodeFromComposable:
     def test_composable_without_return_annotation(self):
         class NoAnnotationComposable:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(NoAnnotationComposable)
 
@@ -208,7 +224,9 @@ class TestCreateNodeFromComposable:
             class_var = "class_value"
 
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
+
 
         node_class = create_node_from_composable(ComposableWithVars)
 
@@ -223,7 +241,8 @@ class TestCreateNodeFromComposable:
                 return "helper"
 
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(ComposableWithStatic)
 
@@ -236,11 +255,13 @@ class TestCreateNodeFromComposable:
             base_value = "base"
 
             @classmethod
-            def base_method(cls) -> None: ...
+            def base_method(cls) -> None:
+                ...
 
         class DerivedComposable(BaseComposable):
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(DerivedComposable)
 
@@ -251,7 +272,8 @@ class TestCreateNodeFromComposable:
     def test_cache_invalidation_not_possible(self):
         class CacheTestComposable:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class_1 = create_node_from_composable(CacheTestComposable)
         node_class_2 = create_node_from_composable(CacheTestComposable)
@@ -267,7 +289,8 @@ class TestCreateNodeFromComposable:
     def test_node_initialization_attributes(self):
         class InitTestComposable:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(InitTestComposable)
 
@@ -282,7 +305,8 @@ class TestCreateNodeFromComposable:
     def test_composable_node_with_generic(self):
         class GenericComposable[T]:
             @classmethod
-            def __compose__(cls) -> None: ...
+            def __compose__(cls) -> None:
+                ...
 
         node_class1 = create_node_from_composable(GenericComposable[str])
         node_class2 = create_node_from_composable(GenericComposable[int])
@@ -292,7 +316,8 @@ class TestCreateNodeFromComposable:
     async def test_create_node_from_async_composable(self):
         class AsyncComposable:
             @classmethod
-            async def __compose__(cls) -> None: ...
+            async def __compose__(cls) -> None:
+                ...
 
         node_class = create_node_from_composable(AsyncComposable)
         assert issubclass(node_class, Node)

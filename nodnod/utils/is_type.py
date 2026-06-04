@@ -19,10 +19,13 @@ def is_type[T](annotation: typing.Any, t: typing.Any | tuple[typing.Any, ...], /
     ann_type_args = typing.get_args(annotation)
     t_type_args = typing.get_args(t)
 
-    if orig_annotation is not origin_type and not (
-        isinstance(orig_annotation, type)
-        and isinstance(origin_type, type)
-        and issubclass(orig_annotation, origin_type)
+    if (
+        orig_annotation is not origin_type
+        and not (
+            isinstance(orig_annotation, type)
+            and isinstance(origin_type, type)
+            and issubclass(orig_annotation, origin_type)
+        )
     ):
         return False
 

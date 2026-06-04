@@ -79,9 +79,7 @@ def create_node_from_function(
     prohibit_intersaction_with_node_namespace: bool = True,
 ) -> type[Node]:
     if not callable(func):
-        raise TypeError(
-            f"`func` must be kind of function, got `{repr(func if isinstance(func, type) else type(func))}`."
-        )
+        raise TypeError(f"`func` must be kind of function, got `{repr(func if isinstance(func, type) else type(func))}`.")
 
     node_name = (
         getattr(func.__code__, "co_qualname", None)
@@ -97,8 +95,7 @@ def create_node_from_function(
         f"Node:{node_name or getattr(func, '__name__', '<function>')}",
         Node,
         bases=bases,
-        namespace={"__compose__": func, "__module__": module or getattr(func, "__module__", "<module>")}
-        | namespace,
+        namespace={"__compose__": func, "__module__": module or getattr(func, "__module__", "<module>")} | namespace,
         injection_hooks=(collect_externals_and_names_hook,),
     )
 
@@ -110,15 +107,11 @@ def create_node_from_function(
     if node.__compose_names_by_type__ is None:
         node.__init_subclass__(injection_hooks=(collect_externals_and_names_hook,))
 
-    dependencies = (
-        {
-            dep_name: dep if is_node(dep) else create_node_from_composable(dep)
-            for dep_name, dep in dependencies.items()
-            if is_type(dep, Composable)
-        }
-        if dependencies
-        else {}
-    )
+    dependencies = {
+        dep_name: dep if is_node(dep) else create_node_from_composable(dep)
+        for dep_name, dep in dependencies.items()
+        if is_type(dep, Composable)
+    } if dependencies else {}
     names = _NameDict()
     externals: set[str] = getattr(node, "__externals__", set())
     internals: dict[str, typing.Any] = getattr(node, "__internals__", {})

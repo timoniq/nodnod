@@ -24,9 +24,7 @@ async def compose_coroutine(
 ) -> kungfu.Result[Value[typing.Any], NodeError]:
     for result in await asyncio.gather(*dependencies):
         if kungfu.is_err(result):
-            return kungfu.Error(
-                NodeError(f"could not resolve dependencies of `{node.__name__}`", from_error=result.error)
-            )
+            return kungfu.Error(NodeError(f"could not resolve dependencies of `{node.__name__}`", from_error=result.error))
 
     return await compose_node(node, node_scope, local_scope)
 

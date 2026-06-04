@@ -57,7 +57,8 @@ def initialize_forward_refs(
 
 def is_injection(obj: typing.Any, /) -> bool:
     return (
-        is_type(obj, Injection) or (isinstance(obj, typing._AnnotatedAlias) and obj.__metadata__ == ("injection",))  # type: ignore
+        is_type(obj, Injection)
+        or (isinstance(obj, typing._AnnotatedAlias) and obj.__metadata__ == ("injection",))  # type: ignore
     )
 
 
@@ -120,7 +121,7 @@ class Node[T = typing.Any, Root = typing.Any]:
 
             for name, dep_type in all_args.items():
                 if isinstance(dep_type, typing.ForwardRef):
-                    if initialized_ref := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__):
+                    if (initialized_ref := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
                         all_args[name] = initialized_ref
                         continue
 
@@ -135,15 +136,11 @@ class Node[T = typing.Any, Root = typing.Any]:
             dependency_nodes = set[type[Node]]()
             injected_types = set[type[typing.Any]]()
 
-            cls.__map__ = (
-                {  # type: ignore
-                    dep_type: node if is_type(node, Node) else create_node_from_composable(node)
-                    for dep_type, node in cls.__map__.items()
-                    if is_type(node, Composable)
-                }
-                if cls.__map__ is not None
-                else {}
-            )
+            cls.__map__ = {  # type: ignore
+                dep_type: node if is_type(node, Node) else create_node_from_composable(node)
+                for dep_type, node in cls.__map__.items()
+                if is_type(node, Composable)
+            } if cls.__map__ is not None else {}
 
             for dep_name, dep_type in all_args.copy().items():
                 all_args[dep_name] = dep_type = cls.__map__.get(dep_type, dep_type)
@@ -230,13 +227,11 @@ class Node[T = typing.Any, Root = typing.Any]:
                                 if value.cls in cls.__compose_names_by_type__
                             }
                         ),
-                    )
-                    .then(
-                        lambda context: (
+                    ).then(
+                        lambda context:
                             call_with_context(cls.__compose__, context)
                             .map_err(lambda name: NodeError(f"Name `{name}` was not found."))
-                            .unwrap()
-                        ),
+                            .unwrap(),
                     )
                 )
 

@@ -12,14 +12,12 @@ from nodnod.interface.node_from_function import (
 
 class TestCreateNodeFromFunction:
     def test_create_node_from_simple_function(self):
-        def my_func() -> int: ...
+        def my_func() -> int:
+            ...
 
         node = create_node_from_function(my_func)
 
-        assert (
-            node.__name__
-            == "Node:TestCreateNodeFromFunction.test_create_node_from_simple_function.<locals>.my_func"
-        )
+        assert node.__name__ == "Node:TestCreateNodeFromFunction.test_create_node_from_simple_function.<locals>.my_func"
         assert issubclass(node, Node)
         assert node.__compose__ is my_func
 
@@ -27,22 +25,23 @@ class TestCreateNodeFromFunction:
         @scalar_node
         class DepNode:
             @classmethod
-            def __compose__(cls) -> int: ...
+            def __compose__(cls) -> int:
+                ...
 
-        def my_func(dep: DepNode) -> int: ...
+        def my_func(dep: DepNode) -> int:
+            ...
 
         node = create_node_from_function(my_func)
 
-        assert (
-            node.__name__
-            == "Node:TestCreateNodeFromFunction.test_create_node_from_function_with_dependencies.<locals>.my_func"
-        )
+        assert node.__name__ == "Node:TestCreateNodeFromFunction.test_create_node_from_function_with_dependencies.<locals>.my_func"
         assert DepNode in node.__dependencies__
 
     def test_create_node_with_externals(self):
-        def func_with_external(name: str, age: int) -> str: ...
+        def func_with_external(name: str, age: int) -> str:
+            ...
 
-        class Age(Node): ...
+        class Age(Node):
+            ...
 
         node = create_node_from_function(func_with_external, dependencies={"age": Age})
 
@@ -69,14 +68,12 @@ class TestCreateNodeFromFunction:
     def test_node_from_function_initialize_error_on_missing_dependency(self):
         from nodnod.error import NodeError
 
-        def func(x: int) -> int: ...
+        def func(x: int) -> int:
+            ...
 
         node = create_node_from_function(func)
 
-        with pytest.raises(
-            NodeError,
-            match=r"Name `x` was not found. Inject it through one of `Injection\[T\]` or `Externals`, or, if it is a `Node` dependency, check its type\.$",
-        ):
+        with pytest.raises(NodeError, match=r"Name `x` was not found. Inject it through one of `Injection\[T\]` or `Externals`, or, if it is a `Node` dependency, check its type\.$"):
             node.__initialize__(set())
 
     @pytest.mark.asyncio
@@ -101,7 +98,8 @@ class TestCreateNodeFromFunction:
         assert result == 15
 
     def test_create_node_from_function_error_on_non_callable(self):
-        class Dummy: ...
+        class Dummy:
+            ...
 
         with pytest.raises(TypeError, match="^`func` must be kind of function, got `.*`"):
             create_node_from_function(Dummy())  # type: ignore
@@ -110,14 +108,17 @@ class TestCreateNodeFromFunction:
         @scalar_node
         class ANode:
             @classmethod
-            def __compose__(cls) -> int: ...
+            def __compose__(cls) -> int:
+                ...
 
         @scalar_node
         class BNode:
             @classmethod
-            def __compose__(cls) -> int: ...
+            def __compose__(cls) -> int:
+                ...
 
-        def func(n: ANode, b: Injection[int]) -> None: ...
+        def func(n: ANode, b: Injection[int]) -> None:
+            ...
 
         node = create_node_from_function(func, dependencies={"n": BNode, "b": BNode})  # type: ignore
         assert int not in node.__injections__
@@ -129,7 +130,8 @@ class TestCreateAgentFromNode:
         @scalar_node
         class SimpleNode:
             @classmethod
-            def __compose__(cls) -> int: ...
+            def __compose__(cls) -> int:
+                ...
 
         agent = create_agent_from_node(SimpleNode)  # type: ignore
 
@@ -201,9 +203,11 @@ class TestNodeFromFunctionWithInjection:
         @scalar_node
         class Config:
             @classmethod
-            def __compose__(cls) -> dict: ...
+            def __compose__(cls) -> dict:
+                ...
 
-        def process(cfg: Config) -> str: ...
+        def process(cfg: Config) -> str:
+            ...
 
         node = create_node_from_function(process)
 
@@ -215,16 +219,18 @@ class TestNodeFromFunctionForwardRefs:
         @scalar_node
         class MyDep:
             @classmethod
-            def __compose__(cls) -> int: ...
+            def __compose__(cls) -> int:
+                ...
 
-        def func_with_forward_ref(dep: "MyDep") -> int: ...
+        def func_with_forward_ref(dep: "MyDep") -> int:
+            ...
 
-        node = create_node_from_function(func_with_forward_ref, forward_refs={"MyDep": MyDep})
-
-        assert (
-            node.__name__
-            == "Node:TestNodeFromFunctionForwardRefs.test_forward_refs_with_explicit_refs.<locals>.func_with_forward_ref"
+        node = create_node_from_function(
+            func_with_forward_ref,
+            forward_refs={"MyDep": MyDep}
         )
+
+        assert node.__name__ == "Node:TestNodeFromFunctionForwardRefs.test_forward_refs_with_explicit_refs.<locals>.func_with_forward_ref"
 
     @pytest.mark.asyncio
     async def test_forward_ref_as_external(self):
@@ -249,9 +255,11 @@ class TestCollectExternalsHook:
         @scalar_node
         class ConfigNode:
             @classmethod
-            def __compose__(cls) -> dict: ...
+            def __compose__(cls) -> dict:
+                ...
 
-        def func_with_injection(cfg: Injection[ConfigNode], name: str) -> str: ...
+        def func_with_injection(cfg: Injection[ConfigNode], name: str) -> str:
+            ...
 
         node = create_node_from_function(func_with_injection)
 

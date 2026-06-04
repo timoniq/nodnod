@@ -1,7 +1,6 @@
-import dataclasses
 import enum
+import dataclasses
 import typing
-
 from nodnod.node import Node
 
 
@@ -13,7 +12,6 @@ class StepType(enum.StrEnum):
 @dataclasses.dataclass
 class Parallel:
     """Listed nodes are interdependent and can be composed in parallel"""
-
     step_type: typing.Literal[StepType.PARALLEL]
     nodes: set[type[Node]]
 
@@ -21,7 +19,6 @@ class Parallel:
 @dataclasses.dataclass
 class Single:
     """We have to compose one node"""
-
     step_type: typing.Literal[StepType.SINGLE]
     node: type[Node]
 

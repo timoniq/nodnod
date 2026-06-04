@@ -4,6 +4,7 @@ if typing.TYPE_CHECKING:
     from nodnod.value import Value
 
 
+
 def prepare_values(values: dict[typing.Any, "Value[typing.Any]"]) -> dict[str, typing.Any]:
     """Unwraps scalar nodes into scalars and returns new dict"""
     prepared_values = {}
