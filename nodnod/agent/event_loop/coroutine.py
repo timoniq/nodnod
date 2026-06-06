@@ -29,6 +29,19 @@ async def compose_coroutine(
     return await compose_node(node, node_scope, local_scope)
 
 
+async def compose_either_coroutine(
+    node: type["Node"],
+    node_scope: Scope,
+    local_scope: Scope,
+    winner_future: DependencyFuture,
+) -> kungfu.Result[Value[typing.Any], NodeError]:
+    result = await winner_future
+    if kungfu.is_err(result):
+        return kungfu.Error(NodeError(f"could not resolve dependencies of `{node.__name__}`", from_error=result.error))
+
+    return await compose_node(node, node_scope, local_scope, winner=result.unwrap())
+
+
 async def result_node_compose_coroutine(
     node: type["ResultNode[typing.Any, typing.Any]"],
     node_scope: Scope,
@@ -122,6 +135,7 @@ async def dependency_concurrent_either_coroutine(
 
 __all__ = (
     "compose_coroutine",
+    "compose_either_coroutine",
     "dependency_concurrent_either_coroutine",
     "dependency_sequential_either_coroutine",
     "result_node_compose_coroutine",
