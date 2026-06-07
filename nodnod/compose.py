@@ -33,6 +33,7 @@ async def compose_node[T](
     node: type[Node[T]],
     node_scope: Scope,
     local_scope: Scope,
+    winner: Value | None = None,
 ) -> kungfu.Result[Value[T], NodeError]:
     """Composes node into a boxed value.
     If node is already composed in scope, then returns box value from scope"""
@@ -40,27 +41,10 @@ async def compose_node[T](
     if n := node_scope.retrieve(node):
         return kungfu.Ok(n.unwrap())
 
-    dependencies = set[Value]()
-
-    dependency_nodes = getattr(
-        node,
-        "__either__",
-        node.__dependencies__
-    )
-
-    for dependency in dependency_nodes:
-        # dependency can not exist for nodes in __either__ field
-        if dep := local_scope.retrieve(dependency):
-            dependencies.add(
-                dep.unwrap()
-            )
-
-    for injected_type in node.__injections__:
-        dependencies.add(
-            local_scope
-            .retrieve(injected_type)
-            .expect(NodeError(f"couldn't inject `{injected_type.__name__}` because it was not set"))
-        )
+    if hasattr(node, "__either__"):
+        dependencies = _either_dependencies(node, local_scope, winner)
+    else:
+        dependencies = _node_dependencies(node, local_scope)
 
     try:
         value = node.__initialize__(dependencies)
@@ -69,6 +53,35 @@ async def compose_node[T](
         return kungfu.Error(NodeError(f"failed to compose `{node.__name__}`", from_error=e))
 
     return kungfu.Ok(node_scope[node])
+
+
+def _either_dependencies(node: type[Node], local_scope: Scope, winner: Value | None) -> set[Value]:
+    if winner is not None:
+        return {winner}
+
+    either: tuple[type[Node], ...] = getattr(node, "__either__")
+    for candidate in either:
+        if dep := local_scope.retrieve(candidate):
+            return {dep.unwrap()}
+
+    return set()
+
+
+def _node_dependencies(node: type[Node], local_scope: Scope) -> set[Value]:
+    dependencies = set[Value]()
+
+    for dependency in node.__dependencies__:
+        if dep := local_scope.retrieve(dependency):
+            dependencies.add(dep.unwrap())
+
+    for injected_type in node.__injections__:
+        dependencies.add(
+            local_scope
+            .retrieve(injected_type)
+            .expect(NodeError(f"couldn't inject `{injected_type.__name__}` because it was not set"))
+        )
+
+    return dependencies
 
 
 __all__ = ("compose_node", "initialize_node")
