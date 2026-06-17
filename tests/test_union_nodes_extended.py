@@ -63,6 +63,8 @@ class TestUnionNodesExtended:
         assert hasattr(union_node, "__either__")
 
     def test_create_union_node_with_composable_and_injected_types(self):
+        from nodnod.interface.union_node import get_injected_node
+
         class ComposableClass:
             @classmethod
             def __compose__(cls) -> int:
@@ -72,4 +74,7 @@ class TestUnionNodesExtended:
 
         assert issubclass(union_node, Node)
         assert hasattr(union_node, "__either__")
-        assert union_node.__injections__ == {int}
+        # A raw injectable type is now a real fallback candidate of the Either, not an inert
+        # entry in __injections__ that the resolver never consulted.
+        assert len(union_node.__either__) == 2
+        assert get_injected_node(int) in union_node.__either__

@@ -119,8 +119,8 @@ async def dependency_concurrent_either_coroutine(
 
     candidate_dependencies = set(dependencies)
     while candidate_dependencies:
-        done, pending = await asyncio.wait(
-            dependencies,
+        done, candidate_dependencies = await asyncio.wait(
+            candidate_dependencies,
             return_when=asyncio.FIRST_COMPLETED,
         )
         for ready_result_future in done:
@@ -128,7 +128,6 @@ async def dependency_concurrent_either_coroutine(
             if result:
                 return result
             errors.append(result.error)
-        candidate_dependencies = pending
 
     return kungfu.Error(NodeError("no option found for either", from_many=errors))
 

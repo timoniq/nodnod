@@ -58,11 +58,19 @@ class LayerAgent(Agent):
 
                     for i, node in enumerate(nodes):
                         result = results[i]
-                        if isinstance(result, Exception):
-                            raise NodeError("Exception occured", result)
+                        # A cancelled/raised coroutine surfaces as a BaseException (CancelledError
+                        # is a BaseException, not Exception) — re-raise instead of swallowing it.
+                        if isinstance(result, BaseException):
+                            raise result
+                        # compose_node signals failure by returning a falsy kungfu.Error, not by
+                        # raising; propagate it like EventLoopAgent.run does.
+                        if kungfu.is_err(result):
+                            raise result.error
 
                         initiations[node] = result  # type: ignore
 
                 case Single(node=node):
                     result = await compose_node(node, mapped_scopes.get(node, local_scope), local_scope)
+                    if kungfu.is_err(result):
+                        raise result.error
                     initiations[node] = result

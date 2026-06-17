@@ -43,6 +43,29 @@ def get_none_node() -> type[Node]:
 
 
 @cache
+def get_injected_node(injected_type: typing.Any) -> type[Node]:
+    from nodnod.node import Node
+
+    node = create_node(
+        name=f"InjectedNode[{type_repr(injected_type)}]",
+        base_node=Node,
+        bases=tuple(),
+        namespace=dict(
+            __dependencies__=set(),
+            __injections__={injected_type},
+            # Deliver the injected value (the node's single injected dependency). If it was not
+            # injected, retrieval fails and this Either candidate simply fails, letting the union
+            # fall through instead of being a silently inert branch.
+            __initialize__=lambda values: next(iter(values)).value,
+            __module__=__name__,
+        ),
+    )
+    setattr(node, "__traverse__", [node])
+    setattr(node, "__type__", node)
+    return node
+
+
+@cache
 def create_union_node(union: types.UnionType, /) -> type[Node]:
     from nodnod.interface.either import SequentialEither
     from nodnod.interface.is_node import is_node
@@ -53,7 +76,6 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
 
     is_optional = False
     either: list[type[Node]] = list()
-    injected_types: set[typing.Any] = set()
 
     for arg in args:
         if arg in NONE_TYPES:
@@ -71,12 +93,15 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
         elif is_result(arg):
             either.append(create_result_node(arg))
         else:
-            injected_types.add(arg)
+            # A raw injectable type (e.g. `A | int`) must be a real fallback candidate of the
+            # Either. Storing it only in __injections__ left an inert branch the resolver never
+            # consulted, so the union could never fall back to the injected value.
+            either.append(get_injected_node(arg))
 
     if is_optional:
         either.append(get_none_node())
 
-    union_node = create_node(
+    return create_node(
         name="UnionNode[{}]".format(", ".join(type_repr(arg) for arg in args)),
         base_node=SequentialEither,
         bases=tuple(),
@@ -87,8 +112,6 @@ def create_union_node(union: types.UnionType, /) -> type[Node]:
             __module__=__name__,
         ),
     )
-    union_node.__injections__ = injected_types
-    return union_node
 
 
 __all__ = ("create_union_node", "is_union")

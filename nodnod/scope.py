@@ -1,5 +1,5 @@
-import asyncio
 import secrets
+import types
 import typing
 from collections import OrderedDict
 
@@ -11,6 +11,15 @@ from nodnod.utils.aio import awaitable_noop
 from nodnod.value import Value
 
 type AnyType = typing.Any
+
+
+def _raise_teardown_errors(errors: list[BaseException]) -> typing.NoReturn:
+    if len(errors) == 1:
+        raise errors[0]
+    raise NodeError(
+        "errors occurred during scope teardown",
+        from_many=[error if isinstance(error, NodeError) else NodeError(repr(error)) for error in errors],
+    )
 
 
 class Scope(OrderedDict[AnyType, Value]):
@@ -39,19 +48,39 @@ class Scope(OrderedDict[AnyType, Value]):
             raise RuntimeError("Scope has already been closed")
 
         self.is_closed = True
-        coros = []
 
-        for value in self.values():
-            result = value.close()
-            if not isinstance(result, awaitable_noop):
-                coros.append(result)
-
+        # LIFO teardown: dependents are inserted after the dependencies they consume, so
+        # closing in reverse insertion order tears down a dependent before its dependencies.
+        values = list(reversed(self.values()))
         self.clear()
 
-        if not coros:
-            return awaitable_noop()
+        if any(isinstance(value.generator, types.AsyncGeneratorType) for value in values):
+            # Some teardown is asynchronous: process every value sequentially in a single
+            # coroutine so the strict reverse-insertion order holds across mixed sync/async
+            # generators (running sync closes first then async would invert dependency order).
+            return self._close_values_async(values)
 
-        return asyncio.gather(*coros)
+        errors: list[BaseException] = []
+        for value in values:
+            try:
+                value.close()
+            except Exception as error:  # noqa: BLE001 - never abort teardown; collect and continue
+                errors.append(error)
+        if errors:
+            _raise_teardown_errors(errors)
+        return awaitable_noop()
+
+    async def _close_values_async(self, values: list[Value]) -> None:
+        errors: list[BaseException] = []
+        for value in values:
+            try:
+                result = value.close()
+                if not isinstance(result, awaitable_noop):
+                    await result
+            except Exception as error:  # noqa: BLE001
+                errors.append(error)
+        if errors:
+            _raise_teardown_errors(errors)
 
     def has_parent(self, parent: "Scope") -> bool:
         candidate = self.prev
@@ -68,8 +97,18 @@ class Scope(OrderedDict[AnyType, Value]):
         return self
 
     def __exit__(self, *_: typing.Any) -> None:
-        if not self.is_closed:
-            self.close()
+        if self.is_closed:
+            return
+
+        # Async-generator teardown needs an event loop; a synchronous `with` cannot await it.
+        # Refuse loudly instead of silently dropping the cleanup coroutine (leaking the resource).
+        if any(isinstance(value.generator, types.AsyncGeneratorType) for value in self.values()):
+            raise RuntimeError(
+                "Scope holds async-generator dependencies whose teardown requires an event "
+                "loop; use `async with scope` (or `await scope.close()`) instead of `with scope`.",
+            )
+
+        self.close()
 
     async def __aenter__(self) -> typing.Self:
         return self
@@ -80,10 +119,20 @@ class Scope(OrderedDict[AnyType, Value]):
 
     def merge(self) -> "Scope":
         scope = Scope(detail="merge")
-        part = self
+
+        chain: list[Scope] = []
+        part: Scope | None = self
         while part is not None:
-            scope.update(part)
+            chain.append(part)
             part = part.prev
+
+        # Update from the root ancestor down to self, so that on a key conflict the nearest
+        # (child) scope wins — matching retrieve()'s child-first resolution order.
+        for part in reversed(chain):
+            scope.update(part)
+
+        # Keep the synthetic Scope->self entry pointing at the merged scope itself.
+        scope[Scope] = Value(Scope, scope)
         return scope
 
     def inject(self, t: AnyType, value: typing.Any) -> None:
@@ -91,10 +140,11 @@ class Scope(OrderedDict[AnyType, Value]):
 
 
 def validate_local_scope_is_linked_to_node_scopes(local_scope: Scope, node_scopes: dict[type[Node], Scope]) -> None:
-    if __debug__:
-        for node, node_scope in node_scopes.items():
-            if not local_scope.has_parent(node_scope):
-                raise NodeError(f"`{node.__name__}`'s scope ({node_scope.detail}) is not a parent of local scope ({local_scope.detail})")
+    # This is a correctness invariant (a detached mapped scope silently sends values to an
+    # unreachable scope), so it must run unconditionally — not only when `__debug__` is true.
+    for node, node_scope in node_scopes.items():
+        if not local_scope.has_parent(node_scope):
+            raise NodeError(f"`{node.__name__}`'s scope ({node_scope.detail}) is not a parent of local scope ({local_scope.detail})")
 
 
 __all__ = ("Scope", "validate_local_scope_is_linked_to_node_scopes")
