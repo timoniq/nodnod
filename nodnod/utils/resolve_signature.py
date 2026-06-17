@@ -66,11 +66,20 @@ def resolve_callable_annotations(
     localns: dict[str, typing.Any] | None = None
 
     if bound_class is not None:
+        # The class' PEP 695 type parameters and its genuine nested classes belong in the
+        # forward-ref localns. Plain `Name = <value>` class attributes are deliberately excluded:
+        # merging the whole `__dict__` let such an attribute (e.g. `Database = int`) shadow a
+        # same-named dependency type during forward-ref evaluation.
         localns = {
             param.__name__: param
             for param in getattr(bound_class, "__type_params__", ())
         }
-        localns |= {k: v for k, v in bound_class.__dict__.items() if not is_routine_method(v) and not is_routine_descriptor(v)}
+        bound_qualname = getattr(bound_class, "__qualname__", "")
+        localns |= {
+            k: v
+            for k, v in bound_class.__dict__.items()
+            if isinstance(v, type) and getattr(v, "__qualname__", "").startswith(f"{bound_qualname}.")
+        }
 
     for name, annotation in get_annotations(
         obj,
@@ -138,7 +147,10 @@ def resolve_signature(
             continue
 
         typ = hints.get(name, typing.Any)
-        if param.default is param.empty and param.kind is param.POSITIONAL_ONLY:
+        # Positional-only parameters must always be passed positionally — even when they
+        # have a default — otherwise `function(**kwargs)` raises TypeError. Optionality is
+        # tracked separately via `optionals`.
+        if param.kind is param.POSITIONAL_ONLY:
             args[name] = typ
         else:
             kwargs[name] = typ

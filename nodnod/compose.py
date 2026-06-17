@@ -41,12 +41,15 @@ async def compose_node[T](
     if n := node_scope.retrieve(node):
         return kungfu.Ok(n.unwrap())
 
-    if hasattr(node, "__either__"):
-        dependencies = _either_dependencies(node, local_scope, winner)
-    else:
-        dependencies = _node_dependencies(node, local_scope)
-
     try:
+        if hasattr(node, "__either__"):
+            dependencies = _either_dependencies(node, local_scope, winner)
+        else:
+            # Gathering injected dependencies can raise NodeError (a missing injection). Keep it
+            # inside the try so it becomes a soft Error an Either can fall through on, rather than
+            # an exception that escapes and aborts the whole resolution.
+            dependencies = _node_dependencies(node, local_scope)
+
         value = node.__initialize__(dependencies)
         node_scope[node] = await initialize_node(node.__type__, value)
     except NodeError as e:

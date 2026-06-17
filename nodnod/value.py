@@ -20,19 +20,26 @@ class Value[T = typing.Any]:
         return self.value
 
     def close(self) -> typing.Awaitable[typing.Any]:
-        if self.generator is None:
+        generator = self.generator
+        if generator is None:
             return awaitable_noop()
 
-        if isinstance(self.generator, types.AsyncGeneratorType):
-            result = generator_asend(self.generator)
-            self.generator = None
-            return result
-
-        elif isinstance(self.generator, types.GeneratorType):
-            generator_send(self.generator)
-
         self.generator = None
+
+        if isinstance(generator, types.AsyncGeneratorType):
+            return self._aclose(generator)
+
+        # Sync generator: resume once to run the post-yield teardown (the `yield value; cleanup`
+        # idiom), then force-close if it yielded again, so a multi-yield generator is not left
+        # suspended (its finally/cleanup leaked to non-deterministic GC).
+        if isinstance(generator, types.GeneratorType) and generator_send(generator):
+            generator.close()
+
         return awaitable_noop()
+
+    async def _aclose(self, generator: "typing.AsyncGenerator[T, None]") -> None:
+        if await generator_asend(generator):
+            await generator.aclose()
 
     @recursive_repr()
     def __repr__(self) -> str:

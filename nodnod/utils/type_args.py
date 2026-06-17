@@ -1,5 +1,7 @@
 import typing
 
+from nodnod.error import NodeBuildError
+
 type AnnotationForm = typing.Any
 type TypeParameter = typing.TypeVar | typing.TypeVarTuple | typing.ParamSpec
 type TypeParameters = tuple[TypeParameter, ...]
@@ -20,8 +22,15 @@ def get_type_args_values(args: tuple[typing.Any, ...], parameters: TypeParameter
         elif index < len(args):
             type_args[parameter] = args[index]
             index += 1
-        else:
+        elif parameter.has_default():
             type_args[parameter] = parameter.__default__
+        else:
+            # Too few type arguments and no PEP 696 default: fail loudly at parametrization
+            # time instead of silently storing the `typing.NoDefault` sentinel as a value.
+            raise NodeBuildError(
+                f"Missing type argument for `{parameter.__name__}`: "
+                f"expected at least {len(parameters)} type argument(s), got {len(args)}.",
+            )
 
     return type_args
 

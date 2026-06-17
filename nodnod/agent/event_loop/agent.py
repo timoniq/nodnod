@@ -11,7 +11,7 @@ from nodnod.agent.event_loop.coroutine import (
     dependency_sequential_either_coroutine,
     result_node_compose_coroutine,
 )
-from nodnod.builder.build_queue import traverse_all
+from nodnod.builder.build_queue import build_queue, traverse_all
 from nodnod.scope import Scope, validate_local_scope_is_linked_to_node_scopes
 
 if typing.TYPE_CHECKING:
@@ -70,7 +70,10 @@ class EventLoopAgent(Agent):
                             other_dependencies,
                             futures,
                             pusher=lambda _futures, _node: (
-                                self.__class__(getattr(_node, "__traverse__"))
+                                # Either subclasses (Option/Union/nested either) never get a
+                                # `__traverse__`, so fall back to building it on demand instead
+                                # of crashing with AttributeError.
+                                self.__class__(getattr(_node, "__traverse__", None) or build_queue(_node, []))
                                 .push_futures(
                                     local_scope,
                                     mapped_scopes,
@@ -136,8 +139,23 @@ class EventLoopAgent(Agent):
 
         final_futures = {futures[node] for node in self.final_nodes}
 
-        results = await asyncio.gather(*final_futures)
+        try:
+            results = await asyncio.gather(*final_futures, return_exceptions=True)
+        finally:
+            # Cancel any still-pending spawned task (a losing concurrent-either branch, a sibling
+            # of a failed node) before returning. Cancelling — rather than awaiting to completion —
+            # means a loser that blocks indefinitely cannot hang run(), while still preventing an
+            # orphan task from waking up after the scope is closed. Awaiting the cancellations also
+            # retrieves their exceptions so they are not reported as "never retrieved".
+            pending = [future for future in futures.values() if not future.done()]
+            for future in pending:
+                future.cancel()
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
+
         for result in results:
+            if isinstance(result, BaseException):
+                raise result
             if kungfu.is_err(result):
                 raise result.error
 

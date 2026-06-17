@@ -1,5 +1,7 @@
 import collections
+import inspect
 import typing
+import warnings
 
 import kungfu
 from typing_extensions import ForwardRef
@@ -35,24 +37,47 @@ def initialize_forward_refs(
     forward_refs: dict[str, typing.Any],
     *,
     is_from_function: bool = False,
+    own_node: "type[Node] | None" = None,
 ) -> None:
     from nodnod.interface.node_from_function import ExternalDependency
 
-    while FORWARD_REF_REQUESTS:
-        type_name, forward_ref_request = FORWARD_REF_REQUESTS.popitem()
+    # Iterate a snapshot and consume requests selectively: building a function node must not
+    # drain (and mis-mark as external) forward-ref requests that belong to unrelated, still
+    # pending class nodes. `own_node`, when provided, is the function node being built; only its
+    # own requests may be marked external — foreign co-requesters are preserved.
+    for type_name in list(FORWARD_REF_REQUESTS):
+        requesters = FORWARD_REF_REQUESTS.get(type_name)
+        if requesters is None:
+            continue
 
         if type_name in forward_refs:
+            FORWARD_REF_REQUESTS.pop(type_name)
             INITIALIZED_FORWARD_REFS[type_name] = forward_refs[type_name]
 
-            for dependency in forward_ref_request:
+            for dependency in requesters:
                 dependency.__init_subclass__()
-        elif is_from_function:
-            # Mark it as ExternalDependency because this is a ForwardRef to a type that could not be found among
-            # nodes or in the modules from globals. Probably it is defined inside a TYPE_CHECKING block.
-            INITIALIZED_FORWARD_REFS[type_name] = ExternalDependency(type_name)
-        else:
-            # Otherwise, the node cannot have external dependencies, so it should raise an error
+            continue
+
+        if not is_from_function:
+            # A class node cannot have external dependencies, so an unresolved ref is an error.
             raise LookupError(f"Dependency `{type_name}` not found")
+
+        if own_node is not None and own_node not in requesters:
+            # A foreign pending class request during a function build: leave it untouched so it
+            # can still resolve when its real type is later defined.
+            continue
+
+        # The ref belongs to the function being built (likely a TYPE_CHECKING-only type taken as
+        # an external). Mark it external; the owning function node is re-initialized (with its
+        # injection hooks) by create_node_from_function. Remove only this function's own request,
+        # preserving any foreign class co-requesters waiting on the same name.
+        INITIALIZED_FORWARD_REFS.setdefault(type_name, ExternalDependency(type_name))
+        if own_node is not None:
+            requesters.remove(own_node)
+            if not requesters:
+                FORWARD_REF_REQUESTS.pop(type_name, None)
+        else:
+            FORWARD_REF_REQUESTS.pop(type_name, None)
 
 
 def is_injection(obj: typing.Any, /) -> bool:
@@ -114,6 +139,17 @@ class Node[T = typing.Any, Root = typing.Any]:
                 ignore_bound_parameters=True,
             )
             all_args = signature.merge()
+
+            # Annotated `*args` / `**kwargs` cannot be wired as dependencies. They were
+            # silently dropped before, so fail loudly instead of building a broken node.
+            for var_param in (signature.var_positional, signature.var_keyword):
+                if var_param is not None and var_param.annotation not in (typing.Any, inspect.Parameter.empty):
+                    raise NodeBuildError(
+                        f"`{cls.__name__}.__compose__` annotates `{var_param.name}` "
+                        f"(`*args`/`**kwargs`), which cannot be wired as a dependency. "
+                        "Declare each dependency as an explicit parameter.",
+                    )
+
             has_forward_refs_requests = False
 
             # Search for forward refs and form requests to initialize node when forward ref node is initialized
@@ -121,11 +157,21 @@ class Node[T = typing.Any, Root = typing.Any]:
 
             for name, dep_type in all_args.items():
                 if isinstance(dep_type, typing.ForwardRef):
-                    if (initialized_ref := INITIALIZED_FORWARD_REFS.get(dep_type.__forward_arg__)):
+                    forward_arg = dep_type.__forward_arg__
+
+                    if (initialized_ref := INITIALIZED_FORWARD_REFS.get(forward_arg)):
                         all_args[name] = initialized_ref
                         continue
 
-                    FORWARD_REF_REQUESTS[dep_type.__forward_arg__].append(cls)
+                    if forward_arg == cls.__name__:
+                        # Self-referential forward ref: resolve it to this class so it surfaces
+                        # as a clear circular-dependency error during graph validation, instead
+                        # of parking a request that nothing can ever resolve (leaving the node
+                        # permanently uninitialized).
+                        all_args[name] = cls
+                        continue
+
+                    FORWARD_REF_REQUESTS[forward_arg].append(cls)
                     has_forward_refs_requests = True
 
             # If there are forward refs requests, return early to request forward refs to be initialized
@@ -194,6 +240,10 @@ class Node[T = typing.Any, Root = typing.Any]:
                     if not is_processed_by_hook:
                         if is_injection(dep_type):
                             dep_type = get_injection_type(dep_type, owner=cls.__compose__)
+                            # Write the unwrapped type back so `__compose_names_by_type__`
+                            # (built from `all_args`) is keyed by the same type as the boxed
+                            # Value at compose time, instead of by the `Injection[T]` wrapper.
+                            all_args[dep_name] = dep_type
 
                         # Unresolved ForwardRef
                         if isinstance(dep_type, str | ForwardRef):
@@ -207,6 +257,24 @@ class Node[T = typing.Any, Root = typing.Any]:
                         injected_types.add(dep_type)  # type: ignore
 
             if cls.__compose_names_by_type__ is None:
+                # Two parameters resolving to the same dependency/injection type silently
+                # collapse in reverse_dict (one parameter name is lost), failing confusingly at
+                # compose time. Detect it at definition time. External (by-name) parameters of a
+                # function node are addressed by name, not type, so they are exempt.
+                externals = getattr(cls, "__externals__", frozenset())
+                seen_types: dict[typing.Any, str] = {}
+                for arg_name, arg_type in all_args.items():
+                    if arg_name in externals:
+                        continue
+                    if arg_type in seen_types:
+                        raise NodeBuildError(
+                            f"`{cls.__name__}.__compose__` has parameters `{seen_types[arg_type]}` "
+                            f"and `{arg_name}` that resolve to the same dependency type "
+                            f"`{getattr(arg_type, '__name__', arg_type)!r}`; a node cannot depend "
+                            "on the same type under two parameter names.",
+                        )
+                    seen_types[arg_type] = arg_name
+
                 cls.__compose_names_by_type__ = reverse_dict(all_args)
 
             if cls.__dependencies__ is None:
@@ -239,6 +307,19 @@ class Node[T = typing.Any, Root = typing.Any]:
                 cls.__type__ = cls
 
             setattr(cls, "__traverse__", build_queue(cls, []))  # type: ignore
+
+            # If a *different* class is already registered under this name and something is
+            # actively waiting on a bare-string forward ref to it, the registry (keyed only by
+            # __name__) would silently wire the wrong node — warn about the ambiguity.
+            existing = INITIALIZED_FORWARD_REFS.get(cls.__name__)
+            if existing is not None and existing is not cls and cls.__name__ in FORWARD_REF_REQUESTS:
+                warnings.warn(
+                    f"Two different Node classes are registered under the name `{cls.__name__}`; "
+                    f"a string forward reference to `{cls.__name__}` is ambiguous and may resolve "
+                    "to the wrong node. Import the type directly or rename to disambiguate.",
+                    RuntimeWarning,
+                    stacklevel=3,
+                )
 
             INITIALIZED_FORWARD_REFS[cls.__name__] = cls
 

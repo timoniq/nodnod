@@ -43,6 +43,13 @@ def get_nothing_node() -> type[Node]:
 
 @cache
 def create_option_node(option: type[Option[typing.Any]], /) -> type[Node]:
+    """Build an `Option[T]` node as a sequential Either of `Some[T]` / `Nothing`.
+
+    Note: because the fallback is a sequential Either, ANY failure while composing the inner
+    node `T` (including a `NodeError` raised by a genuine bug, a missing injection, or a failed
+    transitive dependency) resolves the option to `Nothing` rather than propagating. `Option[T]`
+    therefore means "absent or unbuildable", and will mask real errors inside `T`.
+    """
     from nodnod.builder.build_queue import build_queue
     from nodnod.interface.either import SequentialEither
     from nodnod.node import Node

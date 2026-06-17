@@ -4,10 +4,10 @@ import kungfu
 from typing_extensions import ForwardRef
 
 from nodnod.builder.build_queue import build_queue
-from nodnod.error import NodeError
+from nodnod.error import NodeBuildError, NodeError
 from nodnod.interface.composable import Composable
 from nodnod.interface.is_node import is_node
-from nodnod.node import ComposeResponse, Node, initialize_forward_refs, is_injection
+from nodnod.node import FORWARD_REF_REQUESTS, ComposeResponse, Node, initialize_forward_refs, is_injection
 from nodnod.utils.call import call_with_context
 from nodnod.utils.create_node import create_node, create_node_from_composable
 from nodnod.utils.injection import get_injection_type
@@ -68,6 +68,23 @@ def initialize_node_with_externals(cls: type[Node], values: set[Value]) -> Compo
     )
 
 
+def _normalize_dependencies(dependencies: typing.Mapping[str, LikeNode] | None) -> dict[str, typing.Any]:
+    normalized: dict[str, typing.Any] = {}
+    for dep_name, dep in (dependencies or {}).items():
+        if is_node(dep):
+            normalized[dep_name] = dep
+        elif is_type(dep, Composable):
+            normalized[dep_name] = create_node_from_composable(dep)
+        else:
+            # Do not silently drop a non-Composable dependency (which would make the parameter
+            # quietly become an external); the user's explicit intent should fail loudly.
+            raise NodeBuildError(
+                f"Dependency `{dep_name}` passed to `create_node_from_function` must be a `Node` "
+                f"or a `Composable` (a class with `__compose__`), got `{dep!r}`.",
+            )
+    return normalized
+
+
 def create_node_from_function(
     func: typing.Callable[..., typing.Any],
     *,
@@ -98,34 +115,37 @@ def create_node_from_function(
         namespace={"__compose__": func, "__module__": module or getattr(func, "__module__", "<module>")} | namespace,
         injection_hooks=(collect_externals_and_names_hook,),
     )
-
+    # Pass the new node as `own_node` so only ITS forward-ref requests may be marked external;
+    # a foreign class node waiting on the same name (collision) is preserved and resolves later.
     if forward_refs is not None:
-        initialize_forward_refs(forward_refs, is_from_function=True)
+        initialize_forward_refs(forward_refs, is_from_function=True, own_node=node)
     else:
-        initialize_forward_refs(getattr(func, "__globals__", {}), is_from_function=True)
+        initialize_forward_refs(getattr(func, "__globals__", {}), is_from_function=True, own_node=node)
 
     if node.__compose_names_by_type__ is None:
         node.__init_subclass__(injection_hooks=(collect_externals_and_names_hook,))
 
-    dependencies = {
-        dep_name: dep if is_node(dep) else create_node_from_composable(dep)
-        for dep_name, dep in dependencies.items()
-        if is_type(dep, Composable)
-    } if dependencies else {}
+    dependencies = _normalize_dependencies(dependencies)
     names = _NameDict()
     externals: set[str] = getattr(node, "__externals__", set())
     internals: dict[str, typing.Any] = getattr(node, "__internals__", {})
 
     for dep_type, dep_name in node.__compose_names_by_type__.items():
         if dep_name in dependencies:
-            # Replace any dependency with a Composable dependency
+            # Replace the dependency wired for this parameter.
 
             new_dependency = dependencies[dep_name]
-            old_dependency = (
-                next((dep for dep in node.__dependencies__ if dep_type in (dep, dep.__type__)), None)
-                if is_node(dep_type)
-                else None
-            )
+            if is_node(dep_type):
+                old_dependency = next(
+                    (dep for dep in node.__dependencies__ if dep_type in (dep, dep.__type__)),
+                    None,
+                )
+            else:
+                # The original annotation was a Composable: node.py already synthesized a node
+                # for it and added it to __dependencies__. Locate that synthesized node so it is
+                # removed too, otherwise the replaced dependency lingers as a broken orphan.
+                synthesized = create_node_from_composable(dep_type) if is_type(dep_type, Composable) else None
+                old_dependency = synthesized if synthesized in node.__dependencies__ else None
 
             if old_dependency is not None:
                 node.__dependencies__.remove(old_dependency)
@@ -155,7 +175,13 @@ def create_node_from_function(
         delattr(node, "__internals__")
 
     setattr(node, "__externals__", externals)
-    setattr(node, "__injections__", {Externals, *internals.values()})
+    # Only require an Externals value when the function actually has external parameters, so a
+    # node with no externals (e.g. a zero-arg function) composes via compose_one without an
+    # explicitly injected empty Externals.
+    injections: set[typing.Any] = {*internals.values()}
+    if externals:
+        injections.add(Externals)
+    setattr(node, "__injections__", injections)
     setattr(node, "__names__", names)
     setattr(node, "__traverse__", build_queue(node, list()))
     setattr(node, "__initialize__", initialize_node_with_externals)

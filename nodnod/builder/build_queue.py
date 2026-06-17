@@ -7,17 +7,25 @@ if typing.TYPE_CHECKING:
 
 
 def build_queue(final: type["Node"], queue: "Queue") -> "Queue":
-    """`Depth-first traversal` to simply compute node compositional order without any optimizations"""
-    validate_no_circular_dependency(final, list())
+    """`Depth-first traversal` to compute node compositional order.
 
-    for dependency in final.__dependencies__:
-        if dependency in queue:
-            continue
-        build_queue(dependency, queue)
-    
-    if final not in queue:
-        queue.append(final)
+    Cycle validation runs once for the whole subtree (memoized inside
+    `validate_no_circular_dependency`), and node membership is tracked with a set,
+    so queue construction is O(V + E) instead of re-validating at every recursion level.
+    """
+    validate_no_circular_dependency(final, [])
+    _extend_queue(final, queue, set(queue))
     return queue
+
+
+def _extend_queue(final: type["Node"], queue: "Queue", seen: set[type["Node"]]) -> None:
+    if final in seen:
+        return
+
+    seen.add(final)
+    for dependency in final.__dependencies__:
+        _extend_queue(dependency, queue, seen)
+    queue.append(final)
 
 
 def traverse_all(nodes: set[type["Node"]]) -> "Queue":

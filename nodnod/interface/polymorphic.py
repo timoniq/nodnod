@@ -22,10 +22,17 @@ def case_decorator[Cls, R, **P](case_method: typing.Callable[typing.Concatenate[
 
 def collect_cases(node_class: type[typing.Any]) -> list[typing.Callable[..., ComposeResponse[typing.Any]]]:
     cases = []
+    seen: set[str] = set()
 
+    # mro() is most-derived first, so a subclass override of a @case method is collected and
+    # its name recorded before the parent's stale definition — the parent copy is then skipped,
+    # instead of producing a duplicate same-named case node.
     for base in node_class.mro():
-        for item in base.__dict__.values():
+        for name, item in base.__dict__.items():
             if isinstance(item, classmethod) and getattr(item.__func__, CASE_MARK, None) is True:
+                if name in seen:
+                    continue
+                seen.add(name)
                 cases.append(item)
 
     return cases

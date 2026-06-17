@@ -43,10 +43,15 @@ class scalar_node[T]:  # noqa: N801
             return node_class
 
         if callable(node_class):
+            name = getattr(node_class, "__name__", None) or type(node_class).__name__
             return type(
-                f"ScalarNode:{node_class.__name__}",
+                f"ScalarNode:{name}",
                 (Node,),
-                dict(__compose__=node_class, __module__=node_class.__module__, is_scalar=True),
+                dict(
+                    __compose__=node_class,
+                    __module__=getattr(node_class, "__module__", "<module>"),
+                    is_scalar=True,
+                ),
             )
 
         raise TypeError(f"scalar_node must be kind of class or function, got `{type(node_class)}`.")
